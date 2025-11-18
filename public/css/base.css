@@ -1,0 +1,160 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+
+input[type="password"]::-ms-reveal,
+input[type="password"]::-webkit-contacts-auto-fill-button,
+input[type="password"]::-webkit-credentials-auto-fill-button {
+    display: none;
+}
+
+
+
+:root {
+    --font-family: "Montserrat", serif;
+    --topbar-color: #044785;
+    --topbar-color-hover: #E07F05;
+    --bg-color: white;
+    --i-hover: #EEEEEE;
+    --has-product: #008029;
+    --nhas-product: #ea1313;
+    --slide-list-hover: #F6F6F6;
+}
+
+body {
+    position: relative;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+body::-webkit-scrollbar {
+    width: 8px;
+}
+
+body::-webkit-scrollbar-thumb {
+    background: var(--topbar-color);
+}
+
+body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+
+*:not(i) {
+    font-family: var(--font-family) !important;
+}
+
+img {
+    width: 100%;
+}
+
+a {
+    text-decoration: none;
+    color: black;
+}
+
+.font-weight-bold {
+    font-weight: 500;
+    font-size: 1.5rem;
+}
+
+.font-weight-600 {
+    font-weight: 600;
+}
+
+.font-weight-500 {
+    font-weight: 500;
+}
+
+/* icon */
+i {
+    margin-right: 0.5rem;
+}
+
+.container {
+    width: 80%;
+    margin: 0 auto;
+}
+
+.container-fluid {
+    width: 100%;
+    margin: 0 auto;
+}
+.d-flex {
+    display: flex;
+}
+
+.just-content-spbt {
+    justify-content: space-between;
+}
+
+.align-items-center {
+    align-items: center;
+}
+
+.hide-item {
+    display: none !important;
+}
+
+.show-item {
+    display: block;
+}
+
+.width-fit-content {
+    width: fit-content;
+}
+/* -----------------------------------MARGIN---------------------------------------- */
+
+.margin-right-small {
+    margin-right: 1rem;
+}
+.margin-right-medium {
+    margin-right: 2rem;
+}
+
+.margin-top-small {
+    margin-top: 1rem;
+}
+.margin-top-medium {
+    margin-top: 2rem;
+}
+
+.margin-bottom-small {
+    margin-bottom: 1rem;
+}
+
+.margin-bottom-medium {
+    margin-bottom: 2rem;
+}
+
+
+/* -------------------------------------------------------------------------------- */
+
+/* ----------------------------------POSITION-------------------------------------- */
+.pos-relative {
+    position: relative;
+}
+
+/* ----------------------------------PADDING------------------------------------- */
+.pd-filter {
+    padding: 1.3rem 1.5rem;
+    border-bottom: 1px solid gray;
+}
+
+.padding-bottom-medium {
+    padding-bottom: 1.5rem;
+}
+
+/* ----------------------------------BUTTOn-------------------------------------- */
+.sort-btn {
+    background-color: #0565bc;
+}
+
+.reset-btn {
+    background-color: #f25529;
+}
+
+
+strong {
+    font-weight: bold;
+}

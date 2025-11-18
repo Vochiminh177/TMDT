@@ -1,0 +1,987 @@
+/* ẩn nội dung */
+.none__item {
+  display: none !important;
+}
+
+/* Select trạng thái */
+.order-buttons {
+  margin-top: 10px;
+  padding-bottom: 10px;
+}
+
+#status-pay-order {
+  padding: 5px 20px;
+  border-radius: 10px;
+  font-size: 15px;
+}
+
+/* thoong bao */
+#notification-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate3d(-50%, -50%, 0);
+  max-width: 400px;
+  background-color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 5px 30px 0 rgba(0, 0, 0, 0.2);
+}
+
+#notification-title {
+  background-color: #044785;
+  line-height: 35px;
+  color: white;
+  text-align: center;
+}
+
+#notification-dialog::backdrop {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+.dialog-buttons {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 15px;
+}
+
+#notification-dialog .dialog-content {
+  padding: 20px;
+}
+
+#notification-message {
+  margin: 0px;
+  font-size: 18px;
+}
+
+#notification-dialog button {
+  padding: 5px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+/* <===== Input Text Form 1 =====> */
+
+.main__row_item {
+  display: flex;
+  flex-direction: column;
+}
+
+.main__find-inp-book-constainer input,
+.main__row_item select {
+  padding: 0.5rem 0.8rem;
+  width: 100%;
+  border-radius: 7px;
+  border: 1px solid gray;
+}
+
+.inp-text-form-1 {
+  position: relative;
+}
+
+.inp-text-form-1 input {
+  width: 100%;
+  height: 30px;
+  padding-left: 10px;
+  outline: none;
+  border: none;
+  border-radius: 4px;
+  background: #f3f3f3;
+  color: #000;
+  font-size: 14px;
+  /* font-weight: 550; */
+  transition: 0.3s ease-in-out;
+  box-shadow: 0 0 0 5px transparent;
+}
+
+.inp-text-form-1 span {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 30px;
+  padding-left: 10px;
+  color: #dedede;
+  font-size: 14px;
+  /* font-weight: 600; */
+  line-height: 30px;
+  transition: 0.3s ease-in-out;
+  pointer-events: none;
+}
+
+.inp-text-form-1 input:focus ~ span,
+.inp-text-form-1 input:valid ~ span {
+  color: #000;
+  transform: translateY(-30px) translateX(-10px) scale(0.95);
+}
+
+.inp-text-form-1 input:not(:focus) ~ span {
+  color: #dedede;
+}
+
+.inp-text-form-1 input:hover,
+.inp-text-form-1 input:focus {
+  border: 2px solid #000;
+}
+
+.inp-text-form-1 input:hover ~ span,
+.inp-text-form-1 input:valid ~ span {
+  color: #000;
+}
+
+.inp-text-form-1 input[type="date"] {
+  color: transparent;
+}
+
+.inp-text-form-1 input[type="date"]:valid,
+.inp-text-form-1 input[type="date"]:focus {
+  color: #000;
+}
+
+.inp-text-form-1.date {
+  display: flex;
+  align-items: center;
+  gap: 0 12px;
+}
+
+.inp-text-form-1.date input[type="date"] {
+  padding-left: 4px;
+  width: calc(50% - 6px);
+  font-family: "Poppins";
+}
+
+.inp-text-form-1.date > i {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  color: #dedede;
+  font-size: 6px;
+  transform: translate3d(-50%, -50%, 0);
+  transition: 0.3s ease-in-out;
+}
+
+.inp-text-form-1.date:has(input:hover) > i,
+.inp-text-form-1.date:has(input:focus) > i,
+.inp-text-form-1.date:has(input:valid) > i {
+  color: #000;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  display: none;
+  pointer-events: none;
+}
+
+/* <===== Select Form 1 =====> */
+.slt-form-1 {
+  position: relative;
+}
+
+.slt-form-1 input {
+  width: 100%;
+  height: 30px;
+  padding-left: 10px;
+  outline: none;
+  border: none;
+  border-radius: 4px;
+  background: #f3f3f3;
+  color: #000;
+  font-size: 14px;
+  /* font-weight: 550; */
+  transition: 0.3s ease-in-out;
+  box-shadow: 0 0 0 5px transparent;
+  cursor: pointer;
+}
+
+.slt-form-1 span {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 30px;
+  padding-left: 10px;
+  color: #dedede;
+  font-size: 14px;
+  /* font-weight: 600; */
+  line-height: 30px;
+  transition: 0.3s ease-in-out;
+  pointer-events: none;
+}
+
+.slt-form-1 ul {
+  position: absolute;
+  top: 35px;
+  left: 0;
+  width: 100%;
+  border-radius: 0 0 4px 4px;
+  background-color: #fff;
+  color: #c5c5c5;
+  font-size: 14px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+  opacity: 0;
+  visibility: hidden;
+  transition: 0.3s ease-in-out;
+}
+
+.slt-form-1 ul li {
+  height: 30px;
+  padding-left: 10px;
+  line-height: 30px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.slt-form-1 input:focus + span,
+.slt-form-1 input:valid + span {
+  color: #000;
+  transform: translateY(-30px) translateX(-10px) scale(0.95);
+}
+
+.slt-form-1 input:not(:focus) + span {
+  color: #dedede;
+}
+
+.slt-form-1 input:hover,
+.slt-form-1 input:focus {
+  border: 2px solid #000;
+}
+
+.slt-form-1 input:hover + span,
+.slt-form-1 input:valid + span {
+  color: #000;
+}
+
+.slt-form-1 input:focus ~ ul {
+  opacity: 1;
+  visibility: visible;
+}
+
+.slt-form-1 input:focus ~ ul li:hover,
+.slt-form-1 input:focus ~ ul li.select {
+  background: #000;
+  color: #fff;
+}
+
+/* <===== Detail / Add / Update Dialog =====> */
+.dialog:where(
+    .profit_dashboard,
+    .order,
+    .privilege,
+    .account,
+    .discount,
+    .supplier,
+    .input_ticket,
+    .book,
+    .author,
+    .category,
+    .cover,
+    .publisher,
+    .issuer,
+    .address-select,
+    .input_ticket-detail,
+    .payment
+  ) {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  /* width: 300px; */
+  background: white;
+  padding: 22px 24px;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 5px 30px 0 rgba(0, 0, 0, 0.2);
+}
+
+.dialog__title {
+  position: relative;
+  top: -4px;
+  font-size: 20px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.dialog__line {
+  width: 100%;
+  height: 4px;
+  background: #000;
+  border-radius: 4px;
+  margin-top: 10px;
+}
+
+.dialog__row {
+  display: flex;
+  align-items: center;
+  gap: 0 24px;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.dialog__row + .dialog__row {
+  margin-top: 14px;
+}
+
+.dialog__form-group {
+  position: relative;
+  width: 50%;
+}
+
+.dialog__form-group:where(.book, .order, .input_ticket) {
+  width: calc(100% / 3);
+}
+
+.dialog__form-group:where(.book, .order, .input_ticket).half {
+  width: calc(calc(100% / 3) / 2 - 12px);
+}
+
+.dialog__form-group.full {
+  width: 100%;
+}
+
+.dialog__form-group:where(.order, .input_ticket).full {
+  width: calc(calc(calc(100% / 3) * 2) + 16px);
+}
+
+.dialog__form-group label,
+.dialog__form-group input,
+.dialog__form-group textarea,
+.dialog__form-group select {
+  width: 100%;
+  height: 40px;
+  color: #dedede;
+  font-size: 16px;
+  transition: 0.3s ease-in-out;
+}
+
+.dialog__form-group label {
+  position: relative;
+}
+
+.dialog__form-group label span {
+  position: absolute;
+  top: -6px;
+  left: calc(100% + 6px);
+  color: #dedede;
+  font-size: 20px;
+  transition: 0.3s ease-in-out;
+}
+
+.dialog__form-group :is(input, textarea) {
+  padding-left: 8px;
+  outline: none;
+  border: 1px solid #dedede;
+  margin-top: 4px;
+  border-radius: 12px;
+  pointer-events: auto;
+}
+
+.dialog__form-group input.text-center {
+  text-align: center;
+}
+
+.dialog__form-group :is(input, textarea):read-only {
+  background: #dedede;
+  border: none;
+}
+
+.dialog__form-group :is(input, textarea)::placeholder {
+  color: #dedede;
+  font-size: 16px;
+  transition: 0.3s ease-in-out;
+}
+
+.dialog__form-group :is(input, textarea):hover::placeholder {
+  color: #000;
+}
+
+.dialog__form-group :is(input, textarea):focus::placeholder {
+  color: #dedede;
+}
+
+.dialog__form-group:has(:is(input, textarea):where(:focus, :hover)) label {
+  color: #000;
+}
+
+.dialog__form-group:has(:is(input, textarea):where(:focus, :hover)) label span {
+  color: red;
+}
+
+.dialog__form-group :is(input, textarea):is(:focus, :hover) {
+  border-color: #000;
+  color: #000;
+}
+
+.dialog__form-group:has(:is(input, textarea):not(:placeholder-shown)) label {
+  color: #000;
+}
+
+.dialog__form-group:has(:is(input, textarea):not(:placeholder-shown))
+  label
+  span {
+  color: red;
+}
+
+.dialog__form-group:has(input:not(:placeholder-shown)) input,
+.dialog__form-group:has(textarea:not(:placeholder-shown)) textarea {
+  border-color: #000;
+  color: #000;
+}
+
+.dialog__form-group select {
+  padding-left: 4px;
+  outline: none;
+  border: 1px solid #dedede;
+  margin-top: 4px;
+  border-radius: 12px;
+  transition: 0.3s ease-in-out;
+  pointer-events: auto;
+}
+
+.dialog__form-group select:hover,
+.dialog__form-group select.changed {
+  border-color: #000;
+  color: #000;
+}
+
+.dialog__form-group:has(select:hover, select.changed) label {
+  color: #000;
+}
+
+.dialog__form-group:has(select:hover, select.changed) label span {
+  color: red;
+}
+
+.dialog__form-group:has(select:disabled) label {
+  color: #000;
+}
+
+.dialog__form-group:has(select:disabled) label span {
+  color: red;
+}
+
+.dialog__form-group select:disabled {
+  background: #dedede;
+  border: none;
+  color: #000;
+}
+
+.dialog__form-group button {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: #2286e3;
+  border: none;
+  width: 80px;
+  height: 20px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 20px;
+  cursor: pointer;
+  transition: 0.2s ease-in-out;
+}
+
+.dialog__form-group button:hover {
+  background: #1d71c0;
+}
+
+.dialog__icons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.dialog__icons i {
+  width: 120px;
+  height: 120px;
+  font-size: 88px;
+  line-height: 120px;
+  text-align: center;
+}
+
+.dialog__icons i:nth-of-type(2) {
+  width: 80px;
+  height: 80px;
+  font-size: 54px;
+  line-height: 80px;
+}
+
+.dialog__buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+  margin-top: 34px;
+}
+
+/* .dialog__buttons button:first-of-type {
+  margin-left: auto;
+} */
+.dialog__buttons button,
+.dialog__close {
+  width: 250px;
+  height: 30px;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  transition: 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.dialog__buttons button.add {
+  background: #699f4c;
+  border: 2px solid #699f4c;
+}
+
+.dialog__buttons button.add:hover {
+  background: #fff;
+  color: #699f4c;
+}
+
+.dialog__buttons button.reset {
+  width: 100px;
+  background: #9f4d4d;
+  border: 2px solid #9f4d4d;
+}
+
+.dialog__buttons button.reset:hover {
+  background: #fff;
+  color: #9f4d4d;
+}
+
+.dialog__buttons button.update {
+  background: #bf873e;
+  border: 2px solid #bf873e;
+}
+
+.dialog__buttons button.update:hover {
+  background: #fff;
+  color: #bf873e;
+}
+
+.dialog__buttons button.yes {
+  width: 150px;
+  background: #3dc55d;
+  border: 2px solid #3dc55d;
+}
+
+.dialog__buttons button.yes:hover {
+  background: #fff;
+  color: #3dc55d;
+}
+
+.dialog__buttons button.no {
+  width: 150px;
+  background: #f44336;
+  border: 2px solid #f44336;
+}
+
+.dialog__buttons button.no:hover {
+  background: #fff;
+  color: #f44336;
+}
+
+.dialog__close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 40px;
+  height: 40px;
+  background: #fff;
+  border: none;
+  color: #000;
+  font-size: 18px;
+  line-height: 40px;
+}
+
+.dialog__close:hover {
+  color: #f44336;
+}
+
+.dialog__form-group.image {
+  position: absolute;
+  width: calc(100% / 3 - 20px);
+  top: 13px;
+}
+
+.dialog__form-group.image img {
+  display: block;
+  width: calc(calc(232px * 3) / 4);
+  height: 234px;
+  background: #dedede;
+  margin: 7px auto;
+}
+
+.dialog__form-group.image button {
+  display: inline-block;
+  width: 100%;
+  top: calc(100% - 40px);
+  height: 40px;
+  background-color: #2286e3;
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.3s ease-in-out;
+  z-index: 1000;
+}
+
+.dialog__form-group.image button:hover {
+  background-color: #1d71c0;
+}
+
+.dialog__row:has(.dialog__form-group.description) {
+  margin: 0;
+}
+
+.dialog__form-group.description {
+  position: absolute;
+  top: 14px;
+  width: calc(100% / 3 - 20px);
+}
+
+.dialog__form-group.description textarea {
+  height: 124px;
+  padding-top: 8px;
+  resize: "off";
+}
+
+.dialog__form-group:has(input[type="date"]) label {
+  color: #dedede !important;
+}
+
+.dialog__form-group input[type="date"] {
+  border-color: #dedede !important;
+  color: #dedede !important;
+}
+
+.dialog__form-group input[type="date"]:hover,
+.dialog__form-group input[type="date"]:focus,
+.dialog__form-group input[type="date"].hasValidDate {
+  border-color: #000 !important;
+  color: #000 !important;
+}
+
+.dialog__form-group:has(input[type="date"]:hover) label,
+.dialog__form-group:has(input[type="date"]:focus) label,
+.dialog__form-group:has(input[type="date"].hasValidDate) label {
+  color: #000 !important;
+}
+
+.dialog__form-group table {
+  table-layout: fixed;
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 4px;
+  font-size: 16px;
+  font-family: sans-serif;
+}
+
+.dialog__form-group table th {
+  /* background-color: #303234; */
+  background: #000;
+  color: #ffffff;
+  line-height: var(--table-height);
+  font-weight: bold;
+}
+
+.dialog__form-group table th,
+.dialog__form-group table td {
+  height: 40px;
+  font-size: 14px;
+  text-align: center;
+  padding: 4px 6px;
+  line-height: var(--table-height);
+}
+
+.dialog__form-group table th,
+.dialog__form-group table td {
+  border: 1px solid #000;
+}
+
+.dialog__form-group table td.left {
+  text-align: left;
+}
+
+.dialog__form-group table td.right {
+  text-align: right;
+}
+
+.dialog__form-group table tr.green {
+  background: #4bd08b;
+}
+
+.dialog__form-group table tr.red {
+  background: #fb977d;
+}
+
+.dialog__buttons:is(.order, .input_ticket) {
+  justify-content: flex-end;
+}
+
+.dialog__buttons:is(.order, .input_ticket) button {
+  width: 20%;
+  border: 2px solid #000;
+}
+
+.dialog__buttons button.ship-status {
+  background: #5d3fd3;
+  border-color: #5d3fd3;
+}
+
+.dialog__buttons button.ship-status:where(:hover, .active) {
+  background: #fff;
+  color: #5d3fd3;
+}
+
+.dialog__buttons button.pay-status {
+  background: #d3873f;
+  border-color: #d3873f;
+}
+
+.dialog__buttons button.pay-status:where(:hover, .active) {
+  background: #fff;
+  color: #d3873f;
+}
+
+.dialog__buttons button.confirm-status {
+  background: #3dc55d;
+  border-color: #3dc55d;
+}
+
+.dialog__buttons button.confirm-status:where(:hover, .active) {
+  background: #fff;
+  color: #3dc55d;
+}
+
+.dialog__buttons button.cancel-status {
+  background: #f44336;
+  border-color: #f44336;
+}
+
+.dialog__buttons button.cancel-status:where(:hover, .active) {
+  background: #fff;
+  color: #f44336;
+}
+
+#confirm-pay-button {
+  background: #7b1fa2;
+  border-color: #7b1fa2;
+}
+
+#confirm-pay-button:where(:hover, .active) {
+  background: #fff;
+  color: #7b1fa2;
+}
+
+.dialog__privilege-detail {
+  margin-top: 14px;
+}
+
+.dialog__privilege-detail table {
+  width: 100%;
+  /* table-layout: auto; */
+}
+
+.dialog__privilege-detail table tr {
+  height: 30px;
+}
+
+/* .dialog__privilege-detail table tr:first-of-type {
+  border-bottom: 2px solid #000;
+} */
+.dialog__privilege-detail table :is(th, td) {
+  text-align: center;
+}
+
+.dialog__privilege-detail table td:first-of-type {
+  text-align: left;
+}
+
+.dialog__privilege-detail table :is(th:not(:first-of-type), td:first-of-type) {
+  font-weight: 400;
+  font-size: 14px;
+}
+
+/* <===== Dashboard =====> */
+.ticket:where(
+    .profit_dashboard,
+    .revenue_dashboard,
+    .invest_dashboard,
+    .order,
+    .input_ticket,
+    .payment
+  ) {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  /* width: 300px; */
+  background: white;
+  padding: 22px 24px;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 5px 30px 0 rgba(0, 0, 0, 0.2);
+}
+
+.ticket__close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 40px;
+  height: 40px;
+  background: #fff;
+  border: none;
+  color: #000;
+  font-size: 18px;
+  line-height: 40px;
+}
+
+.ticket__close:hover {
+  color: #f44336;
+}
+
+.ticket__header {
+  display: flex;
+  align-items: center;
+}
+
+.ticket__logo {
+  width: 240px;
+  height: 80px;
+  object-fit: cover;
+}
+
+.ticket__contact > p {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.ticket__body {
+  margin-top: 24px;
+}
+
+.ticket__title {
+  font-size: 28px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.ticket__date {
+  color: #777;
+  font-size: 18px;
+  text-align: center;
+}
+
+.ticket__table {
+  table-layout: fixed;
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 24px;
+  font-size: 0.9em;
+  font-family: sans-serif;
+}
+
+.ticket__table th {
+  /* background-color: #303234; */
+  background: var(--primary-color);
+  color: #ffffff;
+  font-weight: bold;
+}
+
+.ticket__table th,
+.ticket__table td {
+  height: 40px;
+  padding: 4px 6px;
+  border: 1px solid #000;
+  font-size: var(14px);
+  text-align: center;
+  line-height: var(--table-height);
+}
+
+.ticket__table th {
+  border-color: var(--primary-color);
+}
+
+.ticket__table tfoot td:first-of-type {
+  background: #3597f2;
+  color: #fff;
+  font-size: var(--table-column-font-size);
+  font-weight: 700;
+}
+
+.ticket__table td.left {
+  text-align: left;
+}
+
+.ticket__table td.right {
+  display: table-cell !important;
+  text-align: right;
+}
+
+.ticket__total-text {
+  margin-top: 6px;
+  font-size: 16px;
+  text-align: right;
+}
+
+.ticket__total-text span {
+  font-style: italic;
+}
+
+.ticket__total-text strong {
+  font-weight: bold;
+}
+
+.ticket__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 32px;
+}
+
+.ticket_customer {
+  text-align: center;
+}
+
+.ticket__print-btn {
+  width: 160px;
+  height: 30px;
+  background: #699f4c;
+  border: 2px solid #699f4c;
+  margin: 32px 0 0 50%;
+  transform: translateX(-50%);
+  border-radius: 4px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  transition: 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.ticket__print-btn:hover {
+  background: #fff;
+  color: #699f4c;
+}
+
+.ticket__body:where(.order, .input_ticket) .ticket__info {
+  font-size: 17px;
+}
+
+.ticket__body:where(.order, .input_ticket) .ticket__date {
+  margin-bottom: 24px;
+}
+
+.ticket__body:where(.order, .input_ticket) .ticket__table {
+  margin-top: 4px;
+}
+
+.ticket__footer:where(.order, .input_ticket) {
+  justify-content: space-around;
+}
+
+:is(.ticket__info, .ticket__footer) b {
+  font-weight: bold;
+}
