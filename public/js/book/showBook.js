@@ -16,10 +16,10 @@ function formatNumber(numberString) {
 
 function scrollToBook() {
   document.querySelector('.book-category').scrollIntoView(
-      {
-          behavior: "smooth",
-          block: "start"
-      }
+    {
+      behavior: "smooth",
+      block: "start"
+    }
   );
 }
 
@@ -97,27 +97,32 @@ document.addEventListener("DOMContentLoaded", function () {
       bookList.innerHTML = `<p class="no-books">Không tìm thấy sách!</p>`;
       return;
     }
-
     allproduct.forEach((product) => {
       let statusProduct = product["status"];
       let className =
         statusProduct === "Đang bán"
           ? "book-category__item-status--true"
           : "book-category__item-status--false";
+      let sellingPrice = product["sellingPrice"] * (1 - product["discount"]/100);
+      let priceHTML = '';
+      if (product["discount"] > 0) {
+        priceHTML = `
+            <div class="book-category__item-price-sale">${formatMoney(sellingPrice)}</div>
+            <div class="book-category__item-price-original-wrapper">
+                <span class="book-category__item-price-original">${formatMoney(product["sellingPrice"])}</span>
+                <span class="book-category__item-price-percentage">  ${product["discount"]}%</span>
+            </div>    `;
+      } else {
+        priceHTML =`${formatMoney(product["sellingPrice"])}`;
+      }
 
       bookList.innerHTML += `
         <div class="book-category__item" onclick="showDetailProduct(${product["id"]})">
             <img src="public/uploads/books/${product["image"]}" class="book-category__item-image"></img>
             <div class="book-category__item-name">${product["name"]}</div>
-            <div class="book-category-rate d-flex margin-top-small">
-                <i class="fa-regular fa-star"></i>
-                <i class="fa-regular fa-star"></i>
-                <i class="fa-regular fa-star"></i>
-                <i class="fa-regular fa-star"></i>
-                <i class="fa-regular fa-star"></i>
-            </div>
-            <div class="book-category__item-status ${className} margin-top-small">${statusProduct}</div>
-            <div class="book-category__item-price">${formatMoney(product["sellingPrice"])}</div>
+
+            
+            <div class="book-category__item-price">${priceHTML}</div>
             <div class="book-category__item-add-to-cart margin-top-small">
                 <i class="fa-solid fa-cart-plus book-category__item-button-icon"></i>
                 <span class="book-category__item-button-text">Thêm vào giỏ hàng</span>
@@ -222,18 +227,18 @@ document.addEventListener("DOMContentLoaded", function () {
   //   fetchBooks();
   // });
   const categoryList = document.querySelectorAll('.menu-item');
-    if (categoryList) {
-        categoryList.forEach(category => {
-            category.addEventListener('click', function () {
-                page = 1;
-                localStorage.setItem('currentPage', page);
-                let categoryId = category.dataset.id;
-                localStorage.setItem('selectedCategory', categoryId);
-                fetchBooks();
-                scrollToBook();
-            });
-        });
-    }
+  if (categoryList) {
+    categoryList.forEach(category => {
+      category.addEventListener('click', function () {
+        page = 1;
+        localStorage.setItem('currentPage', page);
+        let categoryId = category.dataset.id;
+        localStorage.setItem('selectedCategory', categoryId);
+        fetchBooks();
+        scrollToBook();
+      });
+    });
+  }
 
 
   sortType.addEventListener("change", () => {

@@ -130,7 +130,7 @@ export async function showOrderHistory() {
 
             // Trạng thái là chờ xác nhận sẽ có nút hủy đơn hàng
             if (orderList[i].trangThai === 'Đang chờ xác nhận' && orderList[i].trangThaiThanhToan === 'Chưa thanh toán') {
-               cancelButtonString = `<button class="order-history__cancel-btn" data-id="${orderList[i].maDonHang}">Hủy đơn</button>`;
+                cancelButtonString = `<button class="order-history__cancel-btn" data-id="${orderList[i].maDonHang}">Hủy đơn</button>`;
             } else {
                 cancelButtonString = '';
             }
@@ -421,14 +421,38 @@ async function showOrderDetail(orderId) {
 
     // Nếu đơn hàng có dữ liệu chi tiết đơn hàng thì hiển thị lên cho người dùng
     if (orderDetailResult && orderDetailResult.length != 0) {
+        console.log(orderDetailResult);
         let productString = '';
         let totalPrice = 0;
+        const isDelivered = order['trangThai'] === 'Đã giao hàng';
+
+        // Lấy tất cả đánh giá cho các sản phẩm trong đơn hàng một cách đồng thời
+        let allRatings = {};
+        if (isDelivered) {
+            const ratingPromises = orderDetailResult.map(detail =>
+                fetch(`api/reviews/get.php?userId=${user['id']}&bookId=${detail.bookId}`).then(res => res.json())
+            );
+            const ratingResults = await Promise.all(ratingPromises);
+            allRatings = ratingResults.map(result => (result.data && result.data.rating) ? result.data.rating : 0);
+            console.log(allRatings);
+        }
+
+        let ratingHeader = isDelivered ? '<th class="table-header-padding">Đánh giá</th>' : '';
 
         // Với mỗi chi tiết đơn hàng, tiến hành fetch dữ liệu sách của chi tiết đó để hiện thị lên chi tiết đơn hàng
         for (let i = 0; i < orderDetailResult.length; i++) {
-            let bookResponse = await fetch(`api/books/getBookDetail.php?find=${orderDetailResult[i].bookId}`);
+            const detail = orderDetailResult[i];
+
+            let bookResponse = await fetch(`api/books/getBookDetail.php?find=${detail.bookId}`);
             let bookResult = await bookResponse.json();
             let book = bookResult.data[0];
+
+            let ratingCell = '';
+            if (isDelivered) {
+                const existingRating = allRatings[i] || 0;
+                console.log("rating:" + existingRating);
+                ratingCell = `<td class="rating-cell">${generateRatingStars(detail.orderId, detail.bookId, existingRating)}</td>`;
+            }
 
             productString += `
             <tr>
@@ -439,15 +463,16 @@ async function showOrderDetail(orderId) {
                     <p class="order-detail__product-title">${book.name}</p>
                     <span class="order-detail__product-description">${book.id} / ${book.categoryName} / ${book.pages}</span>
                 </td>
-                <td>${orderDetailResult[i].bookId}</td>
+                <td>${detail.bookId}</td>
                 <td>${formatMoney(book.sellPrice)}</td>
-                <td>${orderDetailResult[i].amount}</td>
-                <td class="right-align">${formatMoney(orderDetailResult[i].price)}</td>
+                <td>${detail.amount}</td>
+                <td class="right-align">${formatMoney(detail.price)}</td>
+                ${ratingCell}
             </tr>
             `;
 
             // Cộng tiền của chi tiết đơn hàng đó vào tổng giá trị đơn hàng
-            totalPrice += orderDetailResult[i].price;
+            totalPrice += detail.price;
         }
 
 
@@ -475,14 +500,15 @@ async function showOrderDetail(orderId) {
                                     <th class="table-header-padding">Đơn giá</th>
                                     <th class="table-header-padding">Số lượng</th>
                                     <th class="order-detail__table-total-header">Thành tiền</th>
+                                    ${ratingHeader}
                                 </tr>
                                 ${productString}
                                 <tr class="order-detail__total-section">
-                                    <td colspan="5" class="right-align">Tổng tiền sản phẩm</td>
+                                    <td colspan="${isDelivered ? '7' : '6'}" class="right-align">Tổng tiền sản phẩm</td>
                                     <td class="right-align">${formatMoney(totalPrice)}</td>
                                 </tr>
                                 <tr class="">
-                                    <td colspan="5" class="right-align font-weight-500">Tổng tiền đơn hàng (bao gồm phí ship và trừ giảm giá nếu có)</td>
+                                    <td colspan="${isDelivered ? '7' : '6'}" class="right-align font-weight-500">Tổng tiền đơn hàng (bao gồm phí ship và trừ giảm giá nếu có)</td>
                                     <td class="right-align font-weight-600">${formatMoney(order['tongTienThu'])}</td>
                                 </tr>
                             </table>
@@ -492,6 +518,13 @@ async function showOrderDetail(orderId) {
             </div>
         </div>
         `;
+
+        if (isDelivered) {
+            const ratingContainers = document.querySelectorAll('.star-rating-radio');
+            ratingContainers.forEach(container => {
+                container.addEventListener('click', handleRating);
+            });
+        }
 
         // Thêm sự kiện onclick cho nút quay về trang đơn hàng
         document.querySelector('.order-detail__back-to-order-history').addEventListener('click', async () => {
@@ -608,4 +641,89 @@ function formatAddress(address) {
     }
 
     return address;
+}
+
+function generateRatingStars(orderDetailId, bookId, existingRating = 0) {
+    let starsHtml = '';
+
+    // TRƯỜNG HỢP 1: Đã có đánh giá, chỉ hiển thị tĩnh, không cho tương tác.
+    if (existingRating > 0) {
+        starsHtml += '<div class="star-rating-static">'; // Bọc trong div để có thể tùy chỉnh CSS nếu muốn
+        for (let i = 1; i <= 5; i++) {
+            // Nếu i nhỏ hơn hoặc bằng điểm đánh giá, dùng sao đầy (vàng)
+            if (i <= existingRating) {
+                starsHtml += '<span style="color: #ffc107;">&#9733;</span>'; // ★
+            } else {
+            // Ngược lại, dùng sao rỗng (xám)
+                starsHtml += '<span style="color: #e0e0e0;">&#9733;</span>'; // ★
+            }
+        }
+        starsHtml += '</div>';
+        return starsHtml;
+    } 
+    // TRƯỜNG HỢP 2: Chưa có đánh giá, tạo các radio button để người dùng chấm điểm.
+    else {
+        for (let i = 5; i >= 1; i--) {
+            starsHtml += `
+                <input type="radio" id="star-${i}-${orderDetailId}" name="rating-${orderDetailId}" value="${i}" data-book-id="${bookId}" />
+                <label for="star-${i}-${orderDetailId}">&#9733;</label>
+            `;
+        }
+        return `<div class="star-rating-radio" data-order-detail-id="${orderDetailId}">${starsHtml}</div>`;
+    }
+}
+
+async function handleRating(event) {
+    const starInput = event.target;
+    if (starInput.tagName === 'INPUT' && starInput.type === 'radio') {
+        const userId = JSON.parse(sessionStorage.getItem("user")).user['id'];
+        const orderId = starInput.parentElement.dataset.orderDetailId;
+        const bookId = starInput.dataset.bookId;
+        const rating = starInput.value;
+        console.log(starInput);
+        console.log('Submitting rating:', { userId, bookId, orderId, rating });
+
+        const result = await showConfirmationDialog(`Bạn có chắc muốn đánh giá ${rating} sao cho sản phẩm này?`);
+        if (result) {
+            showLoading();
+            const reviewData = {
+                userId: userId,       // Lấy ID người dùng
+                bookId: bookId,        // Lấy ID sách
+                orderId: orderId,      // Lấy ID đơn hàng
+                rating: rating         // Lấy số sao đánh giá
+            };
+
+            try {
+                const response = await fetch('api/reviews/create.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(reviewData)
+
+                });
+                const data = await response.json();
+                hideLoading();
+                toast({
+                    title: "Thành công",
+                    message: data.message,
+                    type: "success",
+                    duration: 3000,
+                });
+                // Disable stars after rating
+                const starContainer = starInput.parentElement;
+                const inputs = starContainer.querySelectorAll('input');
+                inputs.forEach(input => input.disabled = true);
+            } catch (error) {
+                hideLoading();
+                toast({
+                    title: "Lỗi",
+                    message: "Đã có lỗi xảy ra khi gửi đánh giá.",
+                    type: "error",
+                    duration: 3000,
+                });
+                // console.error('Error submitting rating:', error);
+            }
+        }
+    }
 }

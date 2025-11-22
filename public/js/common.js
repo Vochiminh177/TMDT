@@ -92,3 +92,20 @@ export function generateTimeIdPlusMinutes(minutesToAdd) {
 
     return `${year}${month}${day}${hour}${minute}${second}`;
 }
+
+export function generateStarRating(rating = 0) {
+    const maxStars = 5;
+    const roundedRating = Math.round(rating);
+    let starsHTML = `<div class="star-rating-view" title="${roundedRating}/5 sao">`;
+
+    for (let i = 0; i < maxStars; i++) {
+        if (i < roundedRating) {
+            starsHTML += `<i class="filled">★</i>`;
+        } else {
+            starsHTML += `<i>★</i>`;
+        }
+    }
+
+    starsHTML += `</div>`;
+    return starsHTML;
+}

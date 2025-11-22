@@ -40,7 +40,8 @@ function returnJSONBook($books)
             "sellingPrice" => $book['giaBan'],
             "image" => $book['hinhAnh'],
             "status" => $book['trangThai'],
-            "updatedAt" => $book['ngayCapNhat']
+            "updatedAt" => $book['ngayCapNhat'],
+            "discount" => $book['phanTramGiamGia']
         ];
     }
     return $response;

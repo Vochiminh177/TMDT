@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 18, 2025 at 04:37 AM
+-- Generation Time: Nov 22, 2025 at 08:21 PM
 -- Server version: 10.5.28-MariaDB
 -- PHP Version: 8.2.12
 
@@ -125,7 +125,14 @@ INSERT INTO `chitietdonhang` (`maDonHang`, `maSach`, `soLuong`, `tienThu`) VALUE
 (177, 19, 1, 210000),
 (178, 19, 1, 210000),
 (179, 19, 1, 210000),
-(180, 19, 1, 210000);
+(180, 19, 1, 210000),
+(181, 6, 2, 140000),
+(181, 32, 1, 90000),
+(182, 6, 1, 70000),
+(182, 41, 2, 180000),
+(183, 5, 1, 110000),
+(184, 20, 1, 300000),
+(185, 20, 1, 300000);
 
 --
 -- Triggers `chitietdonhang`
@@ -143,6 +150,26 @@ CREATE TRIGGER `trg_chiTietDonHang_tinhTien_update` BEFORE UPDATE ON `chitietdon
     DECLARE giaSach INT;
     SELECT giaBan INTO giaSach FROM sach WHERE maSach = NEW.maSach;
     SET NEW.tienThu = giaSach * NEW.soLuong;
+END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `update_sales_on_insert` AFTER INSERT ON `chitietdonhang` FOR EACH ROW BEGIN
+    -- Khai báo biến để lưu trạng thái thanh toán
+    DECLARE payment_status VARCHAR(50); 
+    
+    -- Lấy trạng thái thanh toán từ bảng donhang
+    SELECT trangThaiThanhToan
+    INTO payment_status
+    FROM donhang
+    WHERE maDonHang = NEW.maDonHang; 
+    
+    -- Chỉ cập nhật soLuongBan nếu trạng thái là 'Đã thanh toán'
+    IF payment_status = 'Đã thanh toán' THEN
+        UPDATE sach
+        SET soLuongBan = soLuongBan + NEW.soLuong
+        WHERE maSach = NEW.maSach;
+    END IF;
 END
 $$
 DELIMITER ;
@@ -203,7 +230,8 @@ INSERT INTO `chitietphieunhap` (`maPhieuNhap`, `maSach`, `giaNhap`, `soLuong`) V
 (18, 2, 15000, 10),
 (19, 9, 100000, 2),
 (20, 2, 50000, 2),
-(21, 6, 1000, 200);
+(21, 6, 1000, 200),
+(22, 10, 90000, 10);
 
 -- --------------------------------------------------------
 
@@ -570,19 +598,24 @@ INSERT INTO `donhang` (`maDonHang`, `ngayTaoDon`, `maKhachHang`, `maKhuyenMai`, 
 (165, '2025-11-17 16:35:15', 80, NULL, 'Thành phố Hồ Chí Minh / Quận 10 / Phường 1 / Hồ Thị Kỉ', 120000, '2025-11-17 16:35:15', NULL, 3, 'Chưa thanh toán', 'Đang chờ xác nhận', 'Võ Chí Minh', '0912345678'),
 (166, '2025-11-17 16:57:52', 80, NULL, 'Thành phố Hồ Chí Minh / Quận 10 / Phường 1 / Hồ Thị Kỉ', 90000, '2025-11-17 16:57:52', NULL, 3, 'Chưa thanh toán', 'Đang chờ xác nhận', 'Võ Chí Minh', '0912345678'),
 (167, '2025-11-17 17:07:57', 80, NULL, 'Thành phố Hồ Chí Minh / Quận 10 / Phường 1 / Hồ Thị Kỉ', 110000, '2025-11-17 17:07:57', NULL, 3, 'Chưa thanh toán', 'Đang chờ xác nhận', 'Võ Chí Minh', '0912345678'),
-(168, '2025-11-17 17:10:12', 80, NULL, 'Thành phố Hồ Chí Minh / Quận 10 / Phường 1 / Hồ Thị Kỉ', 115000, '2025-11-17 17:10:12', NULL, 3, 'Chưa thanh toán', 'Đang chờ xác nhận', 'Võ Chí Minh', '0912345678'),
+(168, '2025-11-17 17:10:12', 80, NULL, 'Thành phố Hồ Chí Minh / Quận 10 / Phường 1 / Hồ Thị Kỉ', 115000, '2025-11-22 18:56:48', 75, 3, 'Chưa thanh toán', 'Đã giao hàng', 'Võ Chí Minh', '0912345678'),
 (169, '2025-11-17 23:32:30', 80, NULL, 'Thành phố Hồ Chí Minh / Quận 10 / Phường 1 / Hồ Thị Kỉ', 350000, '2025-11-17 23:32:30', NULL, 3, 'Chưa thanh toán', 'Đang chờ xác nhận', 'Võ Chí Minh', '0912345678'),
-(170, '2025-11-17 23:37:56', 80, NULL, 'Thành phố Hồ Chí Minh / Quận 10 / Phường 1 / Hồ Thị Kỉ', 280000, '2025-11-17 23:37:56', NULL, 3, 'Chưa thanh toán', 'Đang chờ xác nhận', 'Võ Chí Minh', '0912345678'),
+(170, '2025-11-17 23:37:56', 80, NULL, 'Thành phố Hồ Chí Minh / Quận 10 / Phường 1 / Hồ Thị Kỉ', 280000, '2025-11-22 19:00:48', 75, 3, 'Chưa thanh toán', 'Đã giao hàng', 'Võ Chí Minh', '0912345678'),
 (171, '2025-11-17 23:43:38', 80, NULL, 'Thành phố Hồ Chí Minh / Quận 10 / Phường 1 / Hồ Thị Kỉ', 330000, '2025-11-17 23:43:38', NULL, 3, 'Chưa thanh toán', 'Đang chờ xác nhận', 'minh', '0912345678'),
-(172, '2025-11-17 23:49:09', 80, NULL, 'Thành phố Hồ Chí Minh / Quận 10 / Phường 1 / Hồ Thị Kỉ', 360000, '2025-11-17 23:49:09', NULL, 3, 'Chưa thanh toán', 'Đang chờ xác nhận', 'minh', '0912345678'),
-(173, '2025-11-17 23:51:16', 80, NULL, 'Thành phố Hồ Chí Minh / Quận 10 / Phường 1 / Hồ Thị Kỉ', 390000, '2025-11-17 23:51:16', NULL, 3, 'Chưa thanh toán', 'Đang chờ xác nhận', 'minh', '0912345678'),
-(174, '2025-11-17 23:53:22', 80, NULL, 'Thành phố Hồ Chí Minh / Quận 10 / Phường 1 / Hồ Thị Kỉ', 230000, '2025-11-17 23:53:22', NULL, 3, 'Chưa thanh toán', 'Đang chờ xác nhận', 'minh', '0912345678'),
-(175, '2025-11-18 00:02:24', 80, NULL, 'Thành phố Hồ Chí Minh / Quận 10 / Phường 1 / Hồ Thị Kỉ', 240000, '2025-11-18 00:02:24', NULL, 3, 'Chưa thanh toán', 'Đang chờ xác nhận', 'minh', '0123456789'),
-(176, '2025-11-18 00:49:30', 80, NULL, 'Thành phố Hồ Chí Minh / Quận 10 / Phường 1 / Hồ Thị Kỉ', 250000, '2025-11-18 00:49:30', NULL, 3, 'Chưa thanh toán', 'Đang chờ xác nhận', 'minh', '0912345678'),
-(177, '2025-11-18 01:09:00', 80, NULL, 'Thành phố Hồ Chí Minh / Quận 10 / Phường 1 / Hồ Thị Kỉ', 260000, '2025-11-18 01:09:00', NULL, 3, 'Chưa thanh toán', 'Đang chờ xác nhận', 'minh', '0912345678'),
-(178, '2025-11-18 01:18:15', 80, NULL, 'Thành phố Hồ Chí Minh / Quận 10 / Phường 1 / Hồ Thị Kỉ', 230000, '2025-11-18 01:18:15', NULL, 3, 'Chưa thanh toán', 'Đang chờ xác nhận', 'minh', '0912345678'),
-(179, '2025-11-18 01:19:44', 80, NULL, 'Thành phố Hồ Chí Minh / Quận 10 / Phường 1 / Hồ Thị Kỉ', 260000, '2025-11-18 01:19:44', NULL, 3, 'Chưa thanh toán', 'Đang chờ xác nhận', 'test', '0912345678'),
-(180, '2025-11-18 10:07:30', 80, NULL, 'Thành phố Hồ Chí Minh / Quận 10 / Phường 1 / Hồ Thị Kỉ', 230000, '2025-11-18 10:16:58', 75, 3, 'Đã thanh toán', 'Đã xác nhận', 'Chí Minh', '0902636286');
+(172, '2025-11-17 23:49:09', 80, NULL, 'Thành phố Hồ Chí Minh / Quận 10 / Phường 1 / Hồ Thị Kỉ', 360000, '2025-11-22 19:00:20', 75, 3, 'Chưa thanh toán', 'Đã giao hàng', 'minh', '0912345678'),
+(173, '2025-11-17 23:51:16', 80, NULL, 'Thành phố Hồ Chí Minh / Quận 10 / Phường 1 / Hồ Thị Kỉ', 390000, '2025-11-22 19:00:04', 75, 3, 'Chưa thanh toán', 'Đã giao hàng', 'minh', '0912345678'),
+(174, '2025-11-17 23:53:22', 80, NULL, 'Thành phố Hồ Chí Minh / Quận 10 / Phường 1 / Hồ Thị Kỉ', 230000, '2025-11-22 18:59:39', 75, 3, 'Chưa thanh toán', 'Đã xác nhận', 'minh', '0912345678'),
+(175, '2025-11-18 00:02:24', 80, NULL, 'Thành phố Hồ Chí Minh / Quận 10 / Phường 1 / Hồ Thị Kỉ', 240000, '2025-11-22 18:59:32', 75, 3, 'Chưa thanh toán', 'Đã xác nhận', 'minh', '0123456789'),
+(176, '2025-11-18 00:49:30', 80, NULL, 'Thành phố Hồ Chí Minh / Quận 10 / Phường 1 / Hồ Thị Kỉ', 250000, '2025-11-22 18:59:27', 75, 3, 'Chưa thanh toán', 'Đã xác nhận', 'minh', '0912345678'),
+(177, '2025-11-18 01:09:00', 80, NULL, 'Thành phố Hồ Chí Minh / Quận 10 / Phường 1 / Hồ Thị Kỉ', 260000, '2025-11-22 18:59:48', 75, 3, 'Chưa thanh toán', 'Đã giao hàng', 'minh', '0912345678'),
+(178, '2025-11-18 01:18:15', 80, NULL, 'Thành phố Hồ Chí Minh / Quận 10 / Phường 1 / Hồ Thị Kỉ', 230000, '2025-11-22 18:59:17', 75, 3, 'Chưa thanh toán', 'Đã giao hàng', 'minh', '0912345678'),
+(179, '2025-11-18 01:19:44', 80, NULL, 'Thành phố Hồ Chí Minh / Quận 10 / Phường 1 / Hồ Thị Kỉ', 260000, '2025-11-22 18:59:06', 75, 3, 'Chưa thanh toán', 'Đã giao hàng', 'test', '0912345678'),
+(180, '2025-11-18 10:07:30', 80, NULL, 'Thành phố Hồ Chí Minh / Quận 10 / Phường 1 / Hồ Thị Kỉ', 230000, '2025-11-20 22:30:16', 75, 3, 'Đã thanh toán', 'Đã giao hàng', 'Chí Minh', '0902636286'),
+(181, '2025-11-22 18:53:53', 80, NULL, 'Thành phố Hồ Chí Minh / Quận 10 / Phường 1 / Hồ Thị Kỉ', 280000, '2025-11-22 18:58:54', 75, 1, 'Chưa thanh toán', 'Đã giao hàng', 'Chí Minh', '0912345678'),
+(182, '2025-11-22 21:18:15', 80, NULL, 'Thành phố Hồ Chí Minh / Quận 10 / Phường 1 / Hồ Thị Kỉ', 270000, '2025-11-22 21:22:41', 75, 3, 'Đã thanh toán', 'Đã giao hàng', 'Chí Minh', '0903961231'),
+(183, '2025-11-22 23:24:21', 80, 16, 'Thành phố Hồ Chí Minh / Quận 10 / Phường 1 / Hồ Thị Kỉ', 119000, '2025-11-22 23:26:59', 75, 1, 'Đã thanh toán', 'Đã giao hàng', 'Chí Minh', '0903961231'),
+(184, '2025-11-23 01:05:56', 82, NULL, ' /  /  / 793/28/48b Trần Xuân Soạn', 350000, '2025-11-23 01:07:43', 75, 1, 'Đã thanh toán', 'Đã giao hàng', 'Chí Minh', '0903961231'),
+(185, '2025-11-23 01:10:54', 75, NULL, 'Thành phố Hà Nội / Quận Ba Đình / Phường Phúc Xá / abc', 320000, '2025-11-23 01:12:03', 75, 1, 'Đã thanh toán', 'Đã giao hàng', 'Chí Minh', '0912345678');
 
 --
 -- Triggers `donhang`
@@ -736,7 +769,9 @@ INSERT INTO `nguoidung` (`maNguoiDung`, `hoVaTen`, `soDT`, `email`, `tenTaiKhoan
 (77, 'Minh', NULL, NULL, 'Minh177', 'f06b79760f06bb9718b13b1332f6ca6e', NULL, '2025-10-14 15:46:26', 'Hoạt động'),
 (78, 'minh', '0903961231', 'abc@gmail.com', 'minhvo', '4297f44b13955235245b2497399d7a93', NULL, '2025-10-21 23:15:42', 'Hoạt động'),
 (79, 'tes17', NULL, NULL, 'test17', '202cb962ac59075b964b07152d234b70', NULL, '2025-10-28 10:07:48', 'Hoạt động'),
-(80, 'Võ Chí Minh', NULL, NULL, 'chminh', '202cb962ac59075b964b07152d234b70', NULL, '2025-11-11 15:31:47', 'Hoạt động');
+(80, 'Võ Chí Minh', NULL, NULL, 'chminh', '202cb962ac59075b964b07152d234b70', NULL, '2025-11-11 15:31:47', 'Hoạt động'),
+(81, 'Võ Chí Minh', '0912345678', 'vcm@gmail.com', 'CMinh', 'c92f1d1f2619172bf87a12e5915702a6', 2, '2025-11-18 10:56:11', 'Hoạt động'),
+(82, 'Test', NULL, NULL, 'Chi Minh', '202cb962ac59075b964b07152d234b70', NULL, '2025-11-23 01:04:31', 'Hoạt động');
 
 -- --------------------------------------------------------
 
@@ -843,7 +878,8 @@ INSERT INTO `phieugiamgia` (`maPGG`, `tenPGG`, `toiThieu`, `toiDa`, `ngayBatDau`
 (12, 'Hè 2025', 100000, 1000000, '2025-05-09', '2025-09-01', '2025-05-10 00:23:51', 25, 'Hoạt động', 'Phần trăm'),
 (13, 'PGG têst', 433, 23, '2025-05-10', '2025-05-17', '2025-05-10 10:28:36', 33, 'Tạm dừng', 'Phần trăm'),
 (14, 'PGG', 34, 4, '2025-05-17', '2025-05-31', '2025-05-10 10:31:32', 4, 'Hoạt động', 'Tiền'),
-(15, '123', 100, 1000000, '2025-05-14', '2025-05-17', '2025-05-14 10:12:33', 100000, 'Hoạt động', 'Tiền');
+(15, '123', 100, 1000000, '2025-05-14', '2025-05-17', '2025-05-14 10:12:33', 100000, 'Hoạt động', 'Tiền'),
+(16, 'NOEL25', 50000, 100000, '2025-11-22', '2025-12-31', '2025-11-22 23:22:50', 10, 'Hoạt động', 'Phần trăm');
 
 -- --------------------------------------------------------
 
@@ -886,7 +922,8 @@ INSERT INTO `phieunhap` (`maPhieuNhap`, `ngayTaoPhieu`, `maNCC`, `tongTienNhap`,
 (18, '2025-05-12 00:00:00', 5, 150, '2025-05-12 17:33:22', 'Đã thanh toán', 1),
 (19, '2025-05-12 00:00:00', 3, 200, '2025-05-12 20:03:47', 'Đang chờ xác nhận', 55),
 (20, '2025-05-12 00:00:00', 2, 100, '2025-05-12 20:08:49', 'Đang chờ xác nhận', 55),
-(21, '2025-05-12 00:00:00', 3, 200000, '2025-05-12 20:10:31', 'Đang chờ xác nhận', 55);
+(21, '2025-05-12 00:00:00', 3, 200000, '2025-05-12 20:10:31', 'Đang chờ xác nhận', 55),
+(22, '2025-11-20 00:00:00', 1, 900000, '2025-11-20 21:37:59', 'Đang chờ xác nhận', 75);
 
 --
 -- Triggers `phieunhap`
@@ -963,6 +1000,72 @@ INSERT INTO `quyen` (`maQuyen`, `tenQuyen`, `ngayCapNhat`, `trangThai`) VALUES
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `ratings`
+--
+
+CREATE TABLE `ratings` (
+  `id` int(11) NOT NULL,
+  `book_id` int(11) NOT NULL,
+  `order_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `rating` tinyint(4) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `ratings`
+--
+
+INSERT INTO `ratings` (`id`, `book_id`, `order_id`, `user_id`, `rating`, `created_at`) VALUES
+(1, 31, 168, 80, 5, '2025-11-22 11:08:35'),
+(2, 19, 180, 80, 5, '2025-11-22 11:56:23'),
+(3, 6, 181, 80, 5, '2025-11-22 12:01:43'),
+(7, 5, 183, 80, 3, '2025-11-22 16:27:54'),
+(8, 20, 172, 80, 2, '2025-11-22 16:30:41'),
+(9, 48, 170, 80, 2, '2025-11-22 16:50:35'),
+(10, 32, 181, 80, 3, '2025-11-22 18:02:43'),
+(11, 20, 184, 82, 4, '2025-11-22 18:07:57'),
+(12, 20, 185, 75, 5, '2025-11-22 18:13:09');
+
+--
+-- Triggers `ratings`
+--
+DELIMITER $$
+CREATE TRIGGER `update_rating_on_insert` AFTER INSERT ON `ratings` FOR EACH ROW BEGIN
+    DECLARE total_score INT;  -- Lưu Tổng Điểm từ bảng ratings
+    DECLARE total_count INT;  -- Lưu Tổng Số Lượng đánh giá
+
+    -- 1. Tính toán TỔNG ĐIỂM (SUM) và TỔNG SỐ LƯỢNG (COUNT) hiện tại cho cuốn sách
+    SELECT 
+        SUM(r.rating),
+        COUNT(*)
+    INTO 
+        total_score, 
+        total_count
+    FROM ratings r
+    WHERE r.book_id = NEW.book_id;
+
+    -- 2. Cập nhật bảng sach
+    UPDATE sach
+    SET 
+        -- Cập nhật cột tongDanhGia trong bảng sach
+        tongDanhGia = total_count, 
+        
+        -- Tính và cập nhật trungBinhDanhGia (Tổng điểm / Tổng số lượng)
+        trungBinhDanhGia = CASE 
+                            -- Đảm bảo không chia cho 0
+                            WHEN total_count > 0 
+                            THEN total_score / total_count
+                            ELSE 0.0
+                           END
+    WHERE maSach = NEW.book_id;
+END
+$$
+DELIMITER ;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `sach`
 --
 
@@ -982,74 +1085,78 @@ CREATE TABLE `sach` (
   `hinhAnh` varchar(200) DEFAULT NULL,
   `ngayCapNhat` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `soLuong` int(11) DEFAULT 0,
-  `trangThai` enum('Đang bán','Dừng bán') DEFAULT 'Đang bán'
+  `trangThai` enum('Đang bán','Dừng bán') DEFAULT 'Đang bán',
+  `soLuongBan` int(11) DEFAULT 0,
+  `tongDanhGia` int(11) DEFAULT 0,
+  `trungBinhDanhGia` decimal(3,1) DEFAULT 0.0,
+  `phanTramGiamGia` tinyint(4) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `sach`
 --
 
-INSERT INTO `sach` (`maSach`, `tenSach`, `soTrang`, `kichThuoc`, `moTa`, `maTacGia`, `maTheLoai`, `maLoaiBia`, `maNXB`, `namXuatBan`, `giaTran`, `giaBan`, `hinhAnh`, `ngayCapNhat`, `soLuong`, `trangThai`) VALUES
-(1, 'Tôi thấy hoa vàng trên cỏ xanhh', 375, 15, 'Tiểu thuyết về tuổi thơ đầy hoài niệm', 1, 1, 2, 5, 2022, 76000, 96000, '1.png', '2025-05-15 04:30:22', 72, 'Dừng bán'),
-(2, 'Người lớn không khóc', 325, 13, 'Tản văn đầy cảm xúc về cuộc sống và tình cảm', 4, 1, 2, 5, 2025, 60000, 75000, '2.png', '2025-05-12 10:38:07', 62, 'Đang bán'),
-(3, 'Đừng lựa chọn an nhàn khi còn trẻ', 280, 14, 'Sách self-help dành cho người trẻ', 3, 5, 3, 3, 2025, 85000, 99000, '3.png', '2025-05-12 10:38:07', 123, 'Đang bán'),
-(4, 'Cho tôi xin một vé đi tuổi thơ', 250, 13, 'Cuốn sách tuổi thơ đầy kỷ niệm', 1, 1, 1, 1, 2025, 65000, 80000, '4.png', '2025-05-12 10:38:07', 409, 'Đang bán'),
-(5, 'Bắt trẻ đồng xanh', 277, 14, 'Tiểu thuyết văn học nổi tiếng', 5, 1, 2, 5, 2025, 90000, 110000, '5.png', '2025-05-14 03:05:51', 65, 'Đang bán'),
-(6, 'Gió đầu mùa', 200, 12, 'Tập truyện ngắn của Thạch Lam', 6, 2, 3, 4, 2025, 50000, 70000, '6.png', '2025-05-14 01:50:25', 79, 'Đang bán'),
-(7, 'Cánh đồng bất tận', 320, 14, 'Truyện ngắn đặc sắc của Nguyễn Ngọc Tư', 7, 2, 1, 6, 2025, 70000, 85000, '7.png', '2025-05-10 01:44:05', 78, 'Đang bán'),
-(8, 'Truyện ngắn Nguyễn Huy Thiệp', 450, 15, 'Tuyển tập truyện ngắn hay nhất của Nguyễn Huy Thiệp', 8, 2, 2, 7, 2025, 100000, 120000, '8.png', '2025-05-14 03:07:10', 81, 'Đang bán'),
-(9, 'Những người khốn khổ', 1200, 17, 'Tác phẩm kinh điển của Victor Hugo', 5, 1, 5, 5, 2025, 200000, 250000, '9.png', '2025-05-14 03:08:45', 36, 'Đang bán'),
-(10, 'Đắc Nhân Tâm', 320, 13, 'Cuốn sách kỹ năng sống nổi tiếng', 4, 5, 1, 2, 2025, 90000, 115000, '10.png', '2025-05-10 01:44:05', 39, 'Đang bán'),
-(11, 'Nhà giả kim', 208, 14, 'Tác phẩm kinh điển của Paulo Coelho', 7, 1, 1, 3, 2025, 70000, 90000, '11.png', '2025-05-10 03:20:13', 176, 'Đang bán'),
-(12, 'Muôn kiếp nhân sinh', 400, 15, 'Tác phẩm về tâm linh và nhân quả', 6, 5, 2, 6, 2025, 160000, 180000, '12.png', '2025-05-12 10:38:07', 134, 'Đang bán'),
-(13, 'Dám nghĩ lớn', 250, 14, 'Sách phát triển tư duy thành công', 8, 5, 3, 4, 2025, 85000, 99000, '13.png', '2025-05-10 01:44:05', 43, 'Đang bán'),
-(14, 'Chiến tranh và hòa bình', 1300, 18, 'Tiểu thuyết lịch sử nổi tiếng của Tolstoy', 5, 7, 4, 5, 2025, 230000, 280000, '14.png', '2025-05-12 10:37:23', 148, 'Đang bán'),
-(15, 'Lịch sử thế giới', 700, 16, 'Cuốn sách tổng hợp về lịch sử nhân loại', 9, 8, 3, 7, 2025, 150000, 180000, '15.png', '2025-05-10 01:44:05', 80, 'Đang bán'),
-(16, 'Sapiens: Lược sử loài người', 450, 15, 'Cuốn sách lịch sử nhân loại nổi tiếng', 10, 8, 2, 4, 2025, 180000, 210000, '16.png', '2025-05-10 01:44:05', 73, 'Đang bán'),
-(17, '1984', 328, 14, 'Tiểu thuyết dystopia kinh điển', 3, 1, 1, 3, 2025, 95000, 115000, '17.png', '2025-05-10 01:44:05', 44, 'Đang bán'),
-(18, 'Dune', 800, 17, 'Tiểu thuyết khoa học viễn tưởng nổi tiếng', 4, 9, 5, 8, 2025, 220000, 260000, '18.png', '2025-05-14 03:02:57', 67, 'Đang bán'),
-(19, 'Harry Potter và Hòn đá phù thủy', 350, 15, 'Tập đầu tiên của Harry Potter', 2, 9, 4, 9, 2025, 180000, 210000, '19.png', '2025-11-18 10:16:58', 50, 'Đang bán'),
-(20, 'Sherlock Holmes toàn tập', 1200, 17, 'Bộ truyện trinh thám kinh điển', 1, 10, 1, 10, 2025, 250000, 300000, '20.png', '2025-05-10 01:44:05', 57, 'Đang bán'),
-(21, 'Bố già', 600, 16, 'Tiểu thuyết kinh điển về thế giới mafia', 1, 1, 1, 1, 2025, 180000, 220000, '21.png', '2025-05-10 01:44:05', 53, 'Đang bán'),
-(22, 'Thiên thần và ác quỷ', 710, 16, 'Tiểu thuyết trinh thám ly kỳ của Dan Brown', 2, 10, 2, 2, 2025, 150000, 180000, '22.png', '2025-05-10 01:44:05', 62, 'Đang bán'),
-(23, 'Mật mã Da Vinci', 689, 16, 'Tiểu thuyết trinh thám bí ẩn nổi tiếng', 3, 10, 3, 3, 2025, 160000, 190000, '23.png', '2025-05-10 01:44:05', 72, 'Đang bán'),
-(24, 'Hoàng tử bé', 120, 12, 'Tác phẩm văn học nổi tiếng về tình yêu và cuộc sống', 4, 1, 4, 4, 2025, 50000, 70000, '24.png', '2025-05-12 09:50:05', 40, 'Đang bán'),
-(25, 'Hai vạn dặm dưới đáy biển', 500, 15, 'Tác phẩm khoa học viễn tưởng kinh điển', 5, 9, 5, 5, 2025, 120000, 150000, '25.png', '2025-05-10 01:44:05', 76, 'Đang bán'),
-(26, 'Tội ác và trừng phạt', 670, 17, 'Tác phẩm kinh điển của Dostoyevsky', 6, 1, 1, 6, 2025, 180000, 220000, '26.png', '2025-05-14 03:08:45', 37, 'Đang bán'),
-(27, 'Những cuộc phiêu lưu của Tom Sawyer', 300, 14, 'Tiểu thuyết thiếu nhi kinh điển', 7, 1, 2, 7, 2025, 80000, 100000, '27.png', '2025-05-10 01:44:05', 62, 'Đang bán'),
-(28, 'Bí mật tư duy triệu phú', 256, 14, 'Sách kỹ năng tài chính nổi tiếng', 8, 5, 3, 8, 2025, 90000, 115000, '28.png', '2025-05-10 01:44:05', 39, 'Đang bán'),
-(29, 'Trí tuệ Do Thái', 420, 15, 'Sách phát triển tư duy', 9, 5, 4, 9, 2025, 120000, 140000, '29.png', '2025-05-10 01:44:05', 80, 'Đang bán'),
-(30, 'Suy nghĩ nhanh và chậm', 610, 16, 'Sách tâm lý học kinh điển', 10, 5, 5, 10, 2025, 180000, 200000, '30.png', '2025-05-10 01:44:05', 50, 'Đang bán'),
-(31, 'Bí mật của may mắn', 200, 12, 'Câu chuyện truyền cảm hứng về thành công', 1, 5, 1, 2, 2025, 70000, 85000, '31.png', '2025-05-10 01:44:05', 32, 'Đang bán'),
-(32, 'Tuổi trẻ đáng giá bao nhiêu?', 280, 13, 'Sách self-help dành cho giới trẻ', 2, 5, 2, 3, 2025, 75000, 90000, '32.png', '2025-05-10 01:44:05', 30, 'Đang bán'),
-(33, 'Cách nghĩ để thành công', 320, 14, 'Cuốn sách kinh điển về thành công', 3, 5, 3, 4, 2025, 90000, 110000, '33.png', '2025-05-10 01:44:05', 74, 'Đang bán'),
-(34, 'Tâm lý học đám đông', 250, 14, 'Cuốn sách tâm lý học nổi tiếng', 4, 5, 4, 5, 2025, 95000, 115000, '34.png', '2025-05-10 01:44:05', 50, 'Đang bán'),
-(35, 'Cư xử như đàn bà suy nghĩ như đàn ông', 340, 15, 'Cuốn sách tâm lý tình cảm phổ biến', 5, 5, 5, 6, 2025, 100000, 120000, '35.png', '2025-05-10 01:44:05', 49, 'Đang bán'),
-(36, 'Lược sử thời gian', 280, 14, 'Cuốn sách khoa học nổi tiếng của Stephen Hawking', 6, 8, 1, 7, 2025, 140000, 170000, '36.png', '2025-05-10 01:44:05', 64, 'Đang bán'),
-(37, 'Bách khoa toàn thư vũ trụ', 500, 17, 'Cuốn sách khoa học về vũ trụ', 7, 8, 2, 8, 2025, 200000, 230000, '37.png', '2025-05-10 01:44:05', 42, 'Đang bán'),
-(38, 'Hành trình về phương Đông', 320, 14, 'Cuốn sách huyền bí về tri thức phương Đông', 8, 5, 3, 9, 2025, 120000, 150000, '38.png', '2025-05-10 01:44:05', 39, 'Đang bán'),
-(39, 'Vũ trụ trong vỏ hạt dẻ', 450, 16, 'Cuốn sách khoa học của Stephen Hawking', 9, 8, 4, 10, 2025, 180000, 200000, '39.png', '2025-05-10 01:44:05', 38, 'Đang bán'),
-(40, 'Những người sống sót', 600, 16, 'Tiểu thuyết tâm lý ly kỳ', 10, 10, 5, 1, 2025, 150000, 180000, '40.png', '2025-05-10 01:44:05', 46, 'Đang bán'),
-(41, 'Hạt giống tâm hồn', 250, 14, 'Tuyển tập những câu chuyện truyền cảm hứng', 1, 5, 1, 1, 2025, 70000, 90000, '41.png', '2025-05-10 01:44:05', 35, 'Đang bán'),
-(42, 'Giết con chim nhại', 400, 16, 'Tiểu thuyết kinh điển về phân biệt chủng tộc', 2, 1, 2, 2, 2025, 120000, 150000, '42.png', '2025-05-10 01:44:05', 56, 'Đang bán'),
-(43, 'Tôi là Bêtô', 300, 14, 'Truyện thiếu nhi nổi tiếng của Nguyễn Nhật Ánh', 3, 1, 3, 3, 2025, 80000, 100000, '43.png', '2025-05-10 01:44:05', 47, 'Đang bán'),
-(44, 'Cuộc sống không giới hạn', 280, 14, 'Tự truyện của Nick Vujicic', 4, 5, 4, 4, 2025, 90000, 110000, '44.png', '2025-05-10 01:44:05', 36, 'Đang bán'),
-(45, 'Bí mật của Phan Thiên Ân', 350, 15, 'Cuốn sách phát triển bản thân đầy triết lý', 5, 5, 5, 5, 2025, 95000, 120000, '45.png', '2025-05-10 01:44:05', 61, 'Đang bán'),
-(46, 'Sherlock Holmes: Dấu bộ tứ', 400, 15, 'Tập truyện trinh thám nổi tiếng', 6, 10, 1, 6, 2025, 140000, 170000, '46.png', '2025-05-10 01:44:05', 66, 'Đang bán'),
-(47, 'Thế giới phẳng', 500, 17, 'Cuốn sách về toàn cầu hóa', 7, 8, 2, 7, 2025, 160000, 190000, '47.png', '2025-05-10 01:44:05', 68, 'Đang bán'),
-(48, 'Nhà thờ Đức Bà Paris', 650, 17, 'Tác phẩm kinh điển của Victor Hugo', 8, 1, 3, 8, 2025, 200000, 230000, '48.png', '2025-05-14 03:08:45', 41, 'Đang bán'),
-(49, 'Lão Hạc', 120, 12, 'Truyện ngắn nổi tiếng của Nam Cao', 9, 2, 4, 9, 2025, 50000, 70000, '49.png', '2025-05-12 09:50:05', 52, 'Đang bán'),
-(50, 'Những kẻ xuất chúng', 320, 14, 'Cuốn sách về sự thành công', 10, 5, 5, 10, 2025, 130000, 160000, '50.png', '2025-05-10 01:44:05', 36, 'Đang bán'),
-(51, 'Những tấm lòng cao cả', 280, 13, 'Truyện thiếu nhi kinh điển', 1, 1, 1, 2, 2025, 70000, 90000, '51.png', '2025-05-10 01:44:05', 77, 'Đang bán'),
-(52, 'Đông A liệt truyện', 750, 18, 'Lịch sử nhà Trần', 2, 8, 2, 3, 2025, 180000, 220000, '52.png', '2025-05-10 01:44:05', 43, 'Đang bán'),
-(53, 'Lược sử tương lai', 430, 15, 'Sách khoa học dự đoán tương lai', 3, 8, 3, 4, 2025, 160000, 190000, '53.png', '2025-05-10 01:44:05', 57, 'Đang bán'),
-(54, 'Truyện Kiều', 500, 16, 'Tác phẩm kinh điển của Nguyễn Du', 4, 2, 4, 5, 2025, 100000, 130000, '54.png', '2025-05-10 01:44:05', 74, 'Đang bán'),
-(55, 'Sống xanh', 270, 14, 'Cuốn sách về bảo vệ môi trường', 5, 5, 5, 6, 2025, 110000, 130000, '55.png', '2025-05-10 01:44:05', 70, 'Đang bán'),
-(56, 'Kẻ trộm sách', 600, 17, 'Tiểu thuyết về chiến tranh và sách', 6, 1, 1, 7, 2025, 150000, 180000, '56.png', '2025-05-14 03:08:45', 25, 'Đang bán'),
-(57, 'Sự im lặng của bầy cừu', 380, 14, 'Tiểu thuyết trinh thám nổi tiếng', 7, 10, 2, 8, 2025, 140000, 170000, '57.png', '2025-05-10 01:44:05', 43, 'Đang bán'),
-(58, 'Nghệ thuật tư duy rành mạch', 350, 14, 'Sách về cách tư duy hiệu quả', 8, 5, 3, 9, 2025, 130000, 160000, '58.png', '2025-05-10 01:44:05', 47, 'Đang bán'),
-(59, 'Làm giàu không khó', 300, 14, 'Cuốn sách dạy kinh doanh', 9, 5, 4, 10, 2025, 90000, 110000, '59.png', '2025-05-10 01:44:05', 78, 'Đang bán'),
-(60, 'Mắt biếc', 260, 13, 'Tiểu thuyết nổi tiếng của Nguyễn Nhật Ánh', 10, 1, 5, 1, 2025, 80000, 100000, '60.png', '2025-05-10 01:44:05', 67, 'Đang bán');
+INSERT INTO `sach` (`maSach`, `tenSach`, `soTrang`, `kichThuoc`, `moTa`, `maTacGia`, `maTheLoai`, `maLoaiBia`, `maNXB`, `namXuatBan`, `giaTran`, `giaBan`, `hinhAnh`, `ngayCapNhat`, `soLuong`, `trangThai`, `soLuongBan`, `tongDanhGia`, `trungBinhDanhGia`, `phanTramGiamGia`) VALUES
+(1, 'Tôi thấy hoa vàng trên cỏ xanhh', 375, 15, 'Tiểu thuyết về tuổi thơ đầy hoài niệm', 1, 1, 2, 5, 2022, 76000, 96000, '1.png', '2025-11-22 00:00:00', 72, 'Dừng bán', 0, 0, 0.0, 0),
+(2, 'Người lớn không khóc', 325, 13, 'Tản văn đầy cảm xúc về cuộc sống và tình cảm', 4, 1, 2, 5, 2025, 60000, 75000, '2.png', '2025-11-21 10:52:46', 62, 'Đang bán', 5, 0, 0.0, 0),
+(3, 'Đừng lựa chọn an nhàn khi còn trẻ', 280, 14, 'Sách self-help dành cho người trẻ', 3, 5, 3, 3, 2025, 85000, 99000, '3.png', '2025-05-12 10:38:07', 123, 'Đang bán', 0, 0, 0.0, 0),
+(4, 'Cho tôi xin một vé đi tuổi thơ', 250, 13, 'Cuốn sách tuổi thơ đầy kỷ niệm', 1, 1, 1, 1, 2025, 65000, 80000, '4.png', '2025-11-21 10:52:46', 409, 'Đang bán', 3, 0, 0.0, 0),
+(5, 'Bắt trẻ đồng xanh', 277, 14, 'Tiểu thuyết văn học nổi tiếng', 5, 1, 2, 5, 2025, 90000, 110000, '5.png', '2025-11-22 23:27:54', 64, 'Đang bán', 0, 1, 3.0, 0),
+(6, 'Gió đầu mùa', 200, 12, 'Tập truyện ngắn của Thạch Lam', 6, 2, 3, 4, 2025, 50000, 70000, '6.png', '2025-11-22 21:22:30', 76, 'Đang bán', 1, 1, 5.0, 0),
+(7, 'Cánh đồng bất tận', 320, 14, 'Truyện ngắn đặc sắc của Nguyễn Ngọc Tư', 7, 2, 1, 6, 2025, 70000, 85000, '7.png', '2025-11-21 10:52:46', 78, 'Đang bán', 2, 0, 0.0, 0),
+(8, 'Truyện ngắn Nguyễn Huy Thiệp', 450, 15, 'Tuyển tập truyện ngắn hay nhất của Nguyễn Huy Thiệp', 8, 2, 2, 7, 2025, 100000, 120000, '8.png', '2025-05-14 03:07:10', 81, 'Đang bán', 0, 0, 0.0, 0),
+(9, 'Những người khốn khổ', 1200, 17, 'Tác phẩm kinh điển của Victor Hugo', 5, 1, 5, 5, 2025, 200000, 250000, '9.png', '2025-05-14 03:08:45', 36, 'Đang bán', 0, 0, 0.0, 0),
+(10, 'Đắc Nhân Tâm', 320, 13, 'Cuốn sách kỹ năng sống nổi tiếng', 4, 5, 1, 2, 2025, 90000, 115000, '10.png', '2025-05-10 01:44:05', 39, 'Đang bán', 0, 0, 0.0, 0),
+(11, 'Nhà giả kim', 208, 14, 'Tác phẩm kinh điển của Paulo Coelho', 7, 1, 1, 3, 2025, 70000, 90000, '11.png', '2025-05-10 03:20:13', 176, 'Đang bán', 0, 0, 0.0, 0),
+(12, 'Muôn kiếp nhân sinh', 400, 15, 'Tác phẩm về tâm linh và nhân quả', 6, 5, 2, 6, 2025, 160000, 180000, '12.png', '2025-05-12 10:38:07', 134, 'Đang bán', 0, 0, 0.0, 0),
+(13, 'Dám nghĩ lớn', 250, 14, 'Sách phát triển tư duy thành công', 8, 5, 3, 4, 2025, 85000, 99000, '13.png', '2025-05-10 01:44:05', 43, 'Đang bán', 0, 0, 0.0, 0),
+(14, 'Chiến tranh và hòa bình', 1300, 18, 'Tiểu thuyết lịch sử nổi tiếng của Tolstoy', 5, 7, 4, 5, 2025, 230000, 280000, '14.png', '2025-11-21 10:52:46', 148, 'Đang bán', 1, 0, 0.0, 0),
+(15, 'Lịch sử thế giới', 700, 16, 'Cuốn sách tổng hợp về lịch sử nhân loại', 9, 8, 3, 7, 2025, 150000, 180000, '15.png', '2025-05-10 01:44:05', 80, 'Đang bán', 0, 0, 0.0, 0),
+(16, 'Sapiens: Lược sử loài người', 450, 15, 'Cuốn sách lịch sử nhân loại nổi tiếng', 10, 8, 2, 4, 2025, 180000, 210000, '16.png', '2025-05-10 01:44:05', 73, 'Đang bán', 0, 0, 0.0, 0),
+(17, '1984', 328, 14, 'Tiểu thuyết dystopia kinh điển', 3, 1, 1, 3, 2025, 95000, 115000, '17.png', '2025-05-10 01:44:05', 44, 'Đang bán', 0, 0, 0.0, 0),
+(18, 'Dune', 800, 17, 'Tiểu thuyết khoa học viễn tưởng nổi tiếng', 4, 9, 5, 8, 2025, 220000, 260000, '18.png', '2025-05-14 03:02:57', 67, 'Đang bán', 0, 0, 0.0, 0),
+(19, 'Harry Potter và Hòn đá phù thủy', 350, 15, 'Tập đầu tiên của Harry Potter', 2, 9, 4, 9, 2025, 180000, 210000, '19.png', '2025-11-22 18:59:39', 45, 'Đang bán', 2, 1, 5.0, 0),
+(20, 'Sherlock Holmes toàn tập', 1200, 17, 'Bộ truyện trinh thám kinh điển', 1, 10, 1, 10, 2025, 250000, 300000, '20.png', '2025-11-23 01:13:09', 53, 'Đang bán', 1, 3, 3.7, 0),
+(21, 'Bố già', 600, 16, 'Tiểu thuyết kinh điển về thế giới mafia', 1, 1, 1, 1, 2025, 180000, 220000, '21.png', '2025-11-21 10:52:46', 53, 'Đang bán', 3, 0, 0.0, 0),
+(22, 'Thiên thần và ác quỷ', 710, 16, 'Tiểu thuyết trinh thám ly kỳ của Dan Brown', 2, 10, 2, 2, 2025, 150000, 180000, '22.png', '2025-05-10 01:44:05', 62, 'Đang bán', 0, 0, 0.0, 0),
+(23, 'Mật mã Da Vinci', 689, 16, 'Tiểu thuyết trinh thám bí ẩn nổi tiếng', 3, 10, 3, 3, 2025, 160000, 190000, '23.png', '2025-05-10 01:44:05', 72, 'Đang bán', 0, 0, 0.0, 0),
+(24, 'Hoàng tử bé', 120, 12, 'Tác phẩm văn học nổi tiếng về tình yêu và cuộc sống', 4, 1, 4, 4, 2025, 50000, 70000, '24.png', '2025-11-23 01:21:51', 40, 'Đang bán', 4, 0, 0.0, 20),
+(25, 'Hai vạn dặm dưới đáy biển', 500, 15, 'Tác phẩm khoa học viễn tưởng kinh điển', 5, 9, 5, 5, 2025, 120000, 150000, '25.png', '2025-05-10 01:44:05', 76, 'Đang bán', 0, 0, 0.0, 0),
+(26, 'Tội ác và trừng phạt', 670, 17, 'Tác phẩm kinh điển của Dostoyevsky', 6, 1, 1, 6, 2025, 180000, 220000, '26.png', '2025-11-21 10:52:46', 37, 'Đang bán', 1, 0, 0.0, 0),
+(27, 'Những cuộc phiêu lưu của Tom Sawyer', 300, 14, 'Tiểu thuyết thiếu nhi kinh điển', 7, 1, 2, 7, 2025, 80000, 100000, '27.png', '2025-05-10 01:44:05', 62, 'Đang bán', 0, 0, 0.0, 0),
+(28, 'Bí mật tư duy triệu phú', 256, 14, 'Sách kỹ năng tài chính nổi tiếng', 8, 5, 3, 8, 2025, 90000, 115000, '28.png', '2025-05-10 01:44:05', 39, 'Đang bán', 0, 0, 0.0, 0),
+(29, 'Trí tuệ Do Thái', 420, 15, 'Sách phát triển tư duy', 9, 5, 4, 9, 2025, 120000, 140000, '29.png', '2025-05-10 01:44:05', 80, 'Đang bán', 0, 0, 0.0, 0),
+(30, 'Suy nghĩ nhanh và chậm', 610, 16, 'Sách tâm lý học kinh điển', 10, 5, 5, 10, 2025, 180000, 200000, '30.png', '2025-05-10 01:44:05', 50, 'Đang bán', 0, 0, 0.0, 0),
+(31, 'Bí mật của may mắn', 200, 12, 'Câu chuyện truyền cảm hứng về thành công', 1, 5, 1, 2, 2025, 70000, 85000, '31.png', '2025-11-22 18:08:35', 31, 'Đang bán', 5, 1, 5.0, 0),
+(32, 'Tuổi trẻ đáng giá bao nhiêu?', 280, 13, 'Sách self-help dành cho giới trẻ', 2, 5, 2, 3, 2025, 75000, 90000, '32.png', '2025-11-23 01:02:43', 29, 'Đang bán', 0, 1, 3.0, 0),
+(33, 'Cách nghĩ để thành công', 320, 14, 'Cuốn sách kinh điển về thành công', 3, 5, 3, 4, 2025, 90000, 110000, '33.png', '2025-05-10 01:44:05', 74, 'Đang bán', 0, 0, 0.0, 0),
+(34, 'Tâm lý học đám đông', 250, 14, 'Cuốn sách tâm lý học nổi tiếng', 4, 5, 4, 5, 2025, 95000, 115000, '34.png', '2025-05-10 01:44:05', 50, 'Đang bán', 0, 0, 0.0, 0),
+(35, 'Cư xử như đàn bà suy nghĩ như đàn ông', 340, 15, 'Cuốn sách tâm lý tình cảm phổ biến', 5, 5, 5, 6, 2025, 100000, 120000, '35.png', '2025-05-10 01:44:05', 49, 'Đang bán', 0, 0, 0.0, 0),
+(36, 'Lược sử thời gian', 280, 14, 'Cuốn sách khoa học nổi tiếng của Stephen Hawking', 6, 8, 1, 7, 2025, 140000, 170000, '36.png', '2025-05-10 01:44:05', 64, 'Đang bán', 0, 0, 0.0, 0),
+(37, 'Bách khoa toàn thư vũ trụ', 500, 17, 'Cuốn sách khoa học về vũ trụ', 7, 8, 2, 8, 2025, 200000, 230000, '37.png', '2025-05-10 01:44:05', 42, 'Đang bán', 0, 0, 0.0, 0),
+(38, 'Hành trình về phương Đông', 320, 14, 'Cuốn sách huyền bí về tri thức phương Đông', 8, 5, 3, 9, 2025, 120000, 150000, '38.png', '2025-05-10 01:44:05', 39, 'Đang bán', 0, 0, 0.0, 0),
+(39, 'Vũ trụ trong vỏ hạt dẻ', 450, 16, 'Cuốn sách khoa học của Stephen Hawking', 9, 8, 4, 10, 2025, 180000, 200000, '39.png', '2025-05-10 01:44:05', 38, 'Đang bán', 0, 0, 0.0, 0),
+(40, 'Những người sống sót', 600, 16, 'Tiểu thuyết tâm lý ly kỳ', 10, 10, 5, 1, 2025, 150000, 180000, '40.png', '2025-05-10 01:44:05', 46, 'Đang bán', 0, 0, 0.0, 0),
+(41, 'Hạt giống tâm hồn', 250, 14, 'Tuyển tập những câu chuyện truyền cảm hứng', 1, 5, 1, 1, 2025, 70000, 90000, '41.png', '2025-11-22 21:22:30', 33, 'Đang bán', 0, 0, 0.0, 0),
+(42, 'Giết con chim nhại', 400, 16, 'Tiểu thuyết kinh điển về phân biệt chủng tộc', 2, 1, 2, 2, 2025, 120000, 150000, '42.png', '2025-05-10 01:44:05', 56, 'Đang bán', 0, 0, 0.0, 0),
+(43, 'Tôi là Bêtô', 300, 14, 'Truyện thiếu nhi nổi tiếng của Nguyễn Nhật Ánh', 3, 1, 3, 3, 2025, 80000, 100000, '43.png', '2025-05-10 01:44:05', 47, 'Đang bán', 0, 0, 0.0, 0),
+(44, 'Cuộc sống không giới hạn', 280, 14, 'Tự truyện của Nick Vujicic', 4, 5, 4, 4, 2025, 90000, 110000, '44.png', '2025-05-10 01:44:05', 36, 'Đang bán', 0, 0, 0.0, 0),
+(45, 'Bí mật của Phan Thiên Ân', 350, 15, 'Cuốn sách phát triển bản thân đầy triết lý', 5, 5, 5, 5, 2025, 95000, 120000, '45.png', '2025-05-10 01:44:05', 61, 'Đang bán', 0, 0, 0.0, 0),
+(46, 'Sherlock Holmes: Dấu bộ tứ', 400, 15, 'Tập truyện trinh thám nổi tiếng', 6, 10, 1, 6, 2025, 140000, 170000, '46.png', '2025-05-10 01:44:05', 66, 'Đang bán', 0, 0, 0.0, 0),
+(47, 'Thế giới phẳng', 500, 17, 'Cuốn sách về toàn cầu hóa', 7, 8, 2, 7, 2025, 160000, 190000, '47.png', '2025-05-10 01:44:05', 68, 'Đang bán', 0, 0, 0.0, 0),
+(48, 'Nhà thờ Đức Bà Paris', 650, 17, 'Tác phẩm kinh điển của Victor Hugo', 8, 1, 3, 8, 2025, 200000, 230000, '48.png', '2025-11-22 23:50:35', 39, 'Đang bán', 0, 1, 2.0, 0),
+(49, 'Lão Hạc', 120, 12, 'Truyện ngắn nổi tiếng của Nam Cao', 9, 2, 4, 9, 2025, 50000, 70000, '49.png', '2025-11-21 10:52:46', 52, 'Đang bán', 6, 0, 0.0, 0),
+(50, 'Những kẻ xuất chúng', 320, 14, 'Cuốn sách về sự thành công', 10, 5, 5, 10, 2025, 130000, 160000, '50.png', '2025-05-10 01:44:05', 36, 'Đang bán', 0, 0, 0.0, 0),
+(51, 'Những tấm lòng cao cả', 280, 13, 'Truyện thiếu nhi kinh điển', 1, 1, 1, 2, 2025, 70000, 90000, '51.png', '2025-05-10 01:44:05', 77, 'Đang bán', 0, 0, 0.0, 0),
+(52, 'Đông A liệt truyện', 750, 18, 'Lịch sử nhà Trần', 2, 8, 2, 3, 2025, 180000, 220000, '52.png', '2025-11-21 10:52:46', 43, 'Đang bán', 1, 0, 0.0, 0),
+(53, 'Lược sử tương lai', 430, 15, 'Sách khoa học dự đoán tương lai', 3, 8, 3, 4, 2025, 160000, 190000, '53.png', '2025-05-10 01:44:05', 57, 'Đang bán', 0, 0, 0.0, 0),
+(54, 'Truyện Kiều', 500, 16, 'Tác phẩm kinh điển của Nguyễn Du', 4, 2, 4, 5, 2025, 100000, 130000, '54.png', '2025-05-10 01:44:05', 74, 'Đang bán', 0, 0, 0.0, 0),
+(55, 'Sống xanh', 270, 14, 'Cuốn sách về bảo vệ môi trường', 5, 5, 5, 6, 2025, 110000, 130000, '55.png', '2025-05-10 01:44:05', 70, 'Đang bán', 0, 0, 0.0, 0),
+(56, 'Kẻ trộm sách', 600, 17, 'Tiểu thuyết về chiến tranh và sách', 6, 1, 1, 7, 2025, 150000, 180000, '56.png', '2025-05-14 03:08:45', 25, 'Đang bán', 0, 0, 0.0, 0),
+(57, 'Sự im lặng của bầy cừu', 380, 14, 'Tiểu thuyết trinh thám nổi tiếng', 7, 10, 2, 8, 2025, 140000, 170000, '57.png', '2025-05-10 01:44:05', 43, 'Đang bán', 0, 0, 0.0, 0),
+(58, 'Nghệ thuật tư duy rành mạch', 350, 14, 'Sách về cách tư duy hiệu quả', 8, 5, 3, 9, 2025, 130000, 160000, '58.png', '2025-05-10 01:44:05', 47, 'Đang bán', 0, 0, 0.0, 0),
+(59, 'Làm giàu không khó', 300, 14, 'Cuốn sách dạy kinh doanh', 9, 5, 4, 10, 2025, 90000, 110000, '59.png', '2025-05-10 01:44:05', 78, 'Đang bán', 0, 0, 0.0, 0),
+(60, 'Mắt biếc', 260, 13, 'Tiểu thuyết nổi tiếng của Nguyễn Nhật Ánh', 10, 1, 5, 1, 2025, 80000, 100000, '60.png', '2025-05-10 01:44:05', 67, 'Đang bán', 0, 0, 0.0, 0);
 
 -- --------------------------------------------------------
 
@@ -1267,6 +1374,15 @@ ALTER TABLE `quyen`
   ADD UNIQUE KEY `tenQuyen` (`tenQuyen`);
 
 --
+-- Indexes for table `ratings`
+--
+ALTER TABLE `ratings`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_user_book_rating` (`user_id`,`book_id`),
+  ADD KEY `book_id` (`book_id`),
+  ADD KEY `danhGia_ibfk_1` (`order_id`,`book_id`);
+
+--
 -- Indexes for table `sach`
 --
 ALTER TABLE `sach`
@@ -1315,7 +1431,7 @@ ALTER TABLE `diachinguoidung`
 -- AUTO_INCREMENT for table `donhang`
 --
 ALTER TABLE `donhang`
-  MODIFY `maDonHang` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=181;
+  MODIFY `maDonHang` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=186;
 
 --
 -- AUTO_INCREMENT for table `hanhdong`
@@ -1333,7 +1449,7 @@ ALTER TABLE `loaibia`
 -- AUTO_INCREMENT for table `nguoidung`
 --
 ALTER TABLE `nguoidung`
-  MODIFY `maNguoiDung` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=81;
+  MODIFY `maNguoiDung` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=83;
 
 --
 -- AUTO_INCREMENT for table `nhacungcap`
@@ -1351,13 +1467,13 @@ ALTER TABLE `nhaxuatban`
 -- AUTO_INCREMENT for table `phieugiamgia`
 --
 ALTER TABLE `phieugiamgia`
-  MODIFY `maPGG` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `maPGG` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT for table `phieunhap`
 --
 ALTER TABLE `phieunhap`
-  MODIFY `maPhieuNhap` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+  MODIFY `maPhieuNhap` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT for table `phuongthucthanhtoan`
@@ -1370,6 +1486,12 @@ ALTER TABLE `phuongthucthanhtoan`
 --
 ALTER TABLE `quyen`
   MODIFY `maQuyen` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+
+--
+-- AUTO_INCREMENT for table `ratings`
+--
+ALTER TABLE `ratings`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `sach`
@@ -1449,6 +1571,14 @@ ALTER TABLE `nguoidung`
 ALTER TABLE `phieunhap`
   ADD CONSTRAINT `fk_maTaiKhoanNhanVien` FOREIGN KEY (`maNhanVien`) REFERENCES `nguoidung` (`maNguoiDung`),
   ADD CONSTRAINT `phieuNhap_ibfk_2` FOREIGN KEY (`maNCC`) REFERENCES `nhacungcap` (`maNCC`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `ratings`
+--
+ALTER TABLE `ratings`
+  ADD CONSTRAINT `danhGia_ibfk_1` FOREIGN KEY (`order_id`,`book_id`) REFERENCES `chitietdonhang` (`maDonHang`, `maSach`) ON DELETE CASCADE,
+  ADD CONSTRAINT `ratings_ibfk_1` FOREIGN KEY (`book_id`) REFERENCES `sach` (`maSach`),
+  ADD CONSTRAINT `ratings_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `nguoidung` (`maNguoiDung`);
 
 --
 -- Constraints for table `sach`

@@ -3,6 +3,7 @@ import { toast } from '../toast.js'
 import { getCurrentUser } from "../auth/displayInfoUser.js";
 import { showConfirmationDialog } from '../question.js';
 import { scrollToTop } from '../footer.js';
+import { generateStarRating } from "../common.js";
 
 // Lưu dữ liệu vào LocalStorage
 document.addEventListener("DOMContentLoaded", async function() {
@@ -177,6 +178,7 @@ async function showDetailProduct(product_id) {
 
     let productDetails = await fetchData(URL);
     let productDetail = productDetails['data'][0];
+    console.log(productDetail);
 
     hideLoading();
 
@@ -200,6 +202,10 @@ async function showDetailProduct(product_id) {
                         <p class="show-detail-product__genre">Thể loại:
                             <b class="font-weight-bold">${productDetail['categoryName']}</b>
                         </p>
+                        <span class="show-detail-product__rating">
+                            ${generateStarRating(productDetail['averageRating'])}
+                            <span class="show-detail-product__rating--number">(${productDetail['totalRatings']} đánh giá)</span>
+                        </span>
                         <p class="show-detail-product__genre">
                             Giá bán:&nbsp;
                             <b class="show-detail-product__price--new">${formatMoney(productDetail['sellPrice'])}</b>

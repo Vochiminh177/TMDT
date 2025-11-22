@@ -502,6 +502,26 @@
   object-fit: cover;
 }
 
+.book-category__item-price {
+  font-size: 1.6rem;
+  color: #000000;
+  margin-top: 0.5rem;
+}
+
+.book-category__item-price-sale {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #ff0000;
+  margin-top: 0.5rem;
+}
+
+.book-category__item-price-original {
+  font-size: 1.4rem;
+  color: #000000;
+  margin-top: 0.5rem;
+  text-decoration: line-through; 
+}
+
 .book-category__list .book-category__item:hover {
   transform: scale(1.2);
   z-index: 2;
@@ -2793,3 +2813,71 @@ td {
   color: white;
   margin-right: 0;
 }
+
+/* ----- Star Rating ----- */
+.star-rating {
+    direction: ltr; /* Đảm bảo sao hiển thị từ trái sang phải */
+    display: inline-flex;
+    flex-direction: row-reverse; /* Đảo ngược để tô màu từ phải sang trái khi hover */
+    justify-content: flex-end;
+}
+.star-rating-view {
+    display: inline-flex;
+}
+.star-rating i, .star-rating-view i {
+    color: #ddd; /* Màu sao mặc định */
+    font-size: 24px;
+    transition: color 0.2s;
+}
+.star-rating.rateable i {
+    cursor: pointer;
+}
+.star-rating.rateable i:hover,
+.star-rating.rateable i:hover ~ i {
+    color: #f5b301; /* Màu sao khi hover */
+}
+.star-rating input[type="radio"] {
+    display: none;
+}
+.star-rating input:checked ~ i {
+    color: #f5b301; /* Màu sao đã được chọn */
+}
+.star-rating-view i.filled {
+    color: #f5b301; /* Màu sao đã có đánh giá */
+}
+
+/* --- Star Rating Radio --- */
+.star-rating-radio {
+  display: flex;
+  flex-direction: row-reverse; /* Đảo ngược thứ tự để hiệu ứng hover đúng */
+  justify-content: flex-end;
+  font-size: 1.5rem; /* Kích thước sao */
+  line-height: 1.5rem;
+}
+
+.star-rating-radio input[type="radio"] {
+  display: none; /* Ẩn radio button gốc */
+}
+
+.star-rating-radio label {
+  color: #ccc; /* Màu sao chưa được chọn */
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+/* Hiệu ứng khi di chuột */
+.star-rating-radio:not(:hover) input[type="radio"]:checked ~ label,
+.star-rating-radio:hover label:hover,
+.star-rating-radio:hover label:hover ~ label {
+  color: #ffc107; /* Màu sao được chọn hoặc khi hover */
+}
+
+/* Khi radio bị vô hiệu hóa (đã đánh giá) */
+.star-rating-radio input[type="radio"]:disabled ~ label {
+    color: #ffc107; /* Giữ màu vàng */
+    cursor: default;
+}
+.star-rating-radio:hover input[type="radio"]:disabled ~ label {
+    color: #ffc107; /* Giữ màu vàng khi hover */
+}
+
