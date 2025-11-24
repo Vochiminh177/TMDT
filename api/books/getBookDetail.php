@@ -10,6 +10,7 @@ function returnJSONBook($filters, $pageCount)
     }
 
     $response = array_map(function ($filter) {
+
         return [
             "id" => $filter['maSach'] ?? '',
             "name" => $filter['tenSach'] ?? '',
@@ -33,7 +34,8 @@ function returnJSONBook($filters, $pageCount)
             "publisherName" => $filter['tenNXB'] ?? '',
             "totalRatings" => $filter['tongDanhGia'] ?? 0,
             "averageRating" => $filter['trungBinhDanhGia'] ?? 0,
-            "discount" => $filter['phanTramGiamGia'] ?? 0
+            "discount" => $filter['phanTramGiamGia'] ?? 0,
+            "salePrice" => $filter['giaSale'] ?? 0
         ];
     }, is_array($filters[0]) ? $filters : [$filters]);
 
@@ -47,7 +49,7 @@ function returnJSONBook($filters, $pageCount)
 
 $columns = ['sach.maSach', 'sach.tenSach', 'sach.soTrang', 'sach.kichThuoc', 'sach.moTa', 'sach.maTacGia',
     'sach.maTheLoai', 'sach.maLoaiBia', 'sach.maNXB', 'sach.namXuatBan', 'sach.giaTran', 'sach.giaBan',
-    'sach.hinhAnh', 'sach.soLuong', 'sach.ngayCapNhat', 'sach.trangThai', 'sach.tongDanhGia', 'sach.trungBinhDanhGia', 'sach.phanTramGiamGia',
+    'sach.hinhAnh', 'sach.soLuong', 'sach.ngayCapNhat', 'sach.trangThai', 'sach.tongDanhGia', 'sach.trungBinhDanhGia', 'sach.phanTramGiamGia', 'sach.giaSale',
     'tacGia.tenTacGia', 'nhaXuatBan.tenNXB', 'theLoai.tenTheLoai', 'loaiBia.tenLoaiBia'];
 $tables = ['sach', 'tacGia', 'nhaXuatBan', 'theLoai', 'loaiBia'];
 $joins = [

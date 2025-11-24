@@ -170,7 +170,12 @@ async function viewCart(type) {
 
   for (const productItem of dataCurrentCart) {
     let details = productItem["details"][0];
+    console.log(details);
 
+    let gia = details.giaBan ;
+    if (details.giaSale > 0) {
+      gia = details.giaSale;
+    }
     cartHTML += `
             <tr>
                 <td><img src="../public/uploads/books/${
@@ -182,12 +187,12 @@ async function viewCart(type) {
                         <br>
                         <span>${details.maSach} / ${
       details.tenTheLoai
-    } / ${formatMoney(details.giaBan)}</span>
+    } / ${formatMoney(gia)}</span>
                     </p>
                     <div class="topbar__cart-view-amountprice-holder">
                         <span>${productItem.quantity}</span>
                         <div>${formatMoney(
-                          details.giaBan * productItem.quantity
+                          gia * productItem.quantity
                         )}</div>
                     </div>
                     <div class="topbar__product-cancel" onclick="removeFromCart(${
@@ -198,7 +203,7 @@ async function viewCart(type) {
                 </td>
             </tr>
         `;
-    totalPrice += productItem.quantity * details.giaBan;
+    totalPrice += productItem.quantity * gia;
   }
 
   let HTML = `

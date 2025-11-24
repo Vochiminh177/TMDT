@@ -6,7 +6,7 @@ import { scrollToTop } from '../footer.js';
 import { generateStarRating } from "../common.js";
 
 // Lưu dữ liệu vào LocalStorage
-document.addEventListener("DOMContentLoaded", async function() {
+document.addEventListener("DOMContentLoaded", async function () {
     const currentParams = new URLSearchParams(window.location.search);
     const url = new URL(window.location.href);
 
@@ -114,13 +114,13 @@ document.addEventListener("DOMContentLoaded", async function() {
         });
     }
 
-    
+
     const currentUser = JSON.parse(sessionStorage.getItem("user")) || null;
     //  Kiểm tra có giỏ hàng tồn dư không
     if (localStorage.getItem('cart') && currentUser !== null) {
         const productList = JSON.parse(localStorage.getItem('cart'));
         console.log(productList);
-        
+
         const resultAnswer = await showConfirmationDialog('Chúng tôi thấy giỏ hàng có sản phẩm lúc bạn chưa đăng nhập. Bạn có muốn thêm vào giỏ chính không ?');
         if (resultAnswer == true) {
             productList.forEach(product => {
@@ -133,15 +133,15 @@ document.addEventListener("DOMContentLoaded", async function() {
                     headers: { "Content-Type": "application/x-www-form-urlencoded" },
                     body: formData.toString()
                 })
-                .then(response => response.json())
-                .then(data => {
-                    toast({
-                        title: 'Thông báo',
-                        message: data.message,
-                        type: data.success ? 'success' : 'warning',
-                        duration: 3000
-                    });
-                })
+                    .then(response => response.json())
+                    .then(data => {
+                        toast({
+                            title: 'Thông báo',
+                            message: data.message,
+                            type: data.success ? 'success' : 'warning',
+                            duration: 3000
+                        });
+                    })
             });
             localStorage.removeItem('cart');
         } else {
@@ -152,7 +152,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     updateQuantityCardHolder();
 
     // Hiển thị sách lên màn hình
-    window.addEventListener("load", function() {
+    window.addEventListener("load", function () {
         if (currentParams.has('bookID') && currentParams.has('dislayBookName')) {
             let bookID = currentParams.get('bookID');
             showDetailProduct(bookID);
@@ -179,6 +179,18 @@ async function showDetailProduct(product_id) {
     let productDetails = await fetchData(URL);
     let productDetail = productDetails['data'][0];
     console.log(productDetail);
+
+    let priceHTML = '';
+    if (productDetail["discount"] > 0) {
+        priceHTML = `
+            <div class="book-category__item-price-sale">${formatMoney(productDetail["salePrice"])}</div>
+            <div class="book-category__item-price-original-wrapper">
+                <span class="book-category__item-price-original">${formatMoney(productDetail["sellPrice"])}</span>
+                <span class="book-category__item-price-percentage">  ${productDetail["discount"]}%</span>
+            </div>`;
+    } else {
+        priceHTML = `${formatMoney(productDetail["sellPrice"])}`;
+    }
 
     hideLoading();
 
@@ -208,7 +220,7 @@ async function showDetailProduct(product_id) {
                         </span>
                         <p class="show-detail-product__genre">
                             Giá bán:&nbsp;
-                            <b class="show-detail-product__price--new">${formatMoney(productDetail['sellPrice'])}</b>
+                            <b class="show-detail-product__price--new">${priceHTML}</b>
                         </p>
                     </div>
 
@@ -253,7 +265,7 @@ async function showDetailProduct(product_id) {
     document.querySelector('.show-detail-product').style.display = 'block';
 
     //  Xử lý thêm/ Mua hàng
-    document.querySelector('.quantity__button-plus').addEventListener('click', function() {
+    document.querySelector('.quantity__button-plus').addEventListener('click', function () {
         let valueQuantity = parseInt(document.querySelector('.quantity__button-number').value);
         if (valueQuantity === 99) {
             toast({
@@ -266,7 +278,7 @@ async function showDetailProduct(product_id) {
         } else document.querySelector('.quantity__button-number').value = valueQuantity + 1;
     });
 
-    document.querySelector('.quantity__button-min').addEventListener('click', function() {
+    document.querySelector('.quantity__button-min').addEventListener('click', function () {
         let valueQuantity = parseInt(document.querySelector('.quantity__button-number').value);
         if (valueQuantity === 1) {
             toast({
@@ -279,11 +291,11 @@ async function showDetailProduct(product_id) {
         } else document.querySelector('.quantity__button-number').value = valueQuantity - 1;
     });
 
-    document.querySelector('.show-detail-product__btn--add-to-cart').addEventListener('click',async function() {
+    document.querySelector('.show-detail-product__btn--add-to-cart').addEventListener('click', async function () {
         let valueQuantity = parseInt(document.querySelector('.quantity__button-number').value);
 
         let currentUser = JSON.parse(sessionStorage.getItem("user")) || null;
-        if (currentUser !== null) { 
+        if (currentUser !== null) {
             const currentUserId = currentUser['user'].id;
             let formData = new URLSearchParams();
             formData.append('maNguoiDung', currentUserId);
@@ -295,18 +307,18 @@ async function showDetailProduct(product_id) {
                 headers: { "Content-Type": "application/x-www-form-urlencoded" },
                 body: formData.toString()
             })
-            .then(response => response.json())
-            .then(data => {
-                toast({
-                    title: 'Thông báo',
-                    message: data.message,
-                    type: data.success ? 'success' : 'warning',
-                    duration: 3000
-                });
-            })
-            .catch(() => {
-                console.log('Có lỗi trong khi thêm sản phẩm vào giỏ');
-            })
+                .then(response => response.json())
+                .then(data => {
+                    toast({
+                        title: 'Thông báo',
+                        message: data.message,
+                        type: data.success ? 'success' : 'warning',
+                        duration: 3000
+                    });
+                })
+                .catch(() => {
+                    console.log('Có lỗi trong khi thêm sản phẩm vào giỏ');
+                })
 
         } else {
 
@@ -353,26 +365,26 @@ async function showDetailProduct(product_id) {
                 },
                 body: data.toString()
             })
-            .then(response => {
-                if (!response.ok) {
-                    console.error('Có lỗi trong khi thêm sản phẩm vào giỏ để mua ngay');
-                }
-
-                return response.json();
-            })
-            .then(data => {
-                toast(
-                    {
-                        title: "Thông báo",
-                        message: data.message,
-                        type: data.success ? "success" : "warning",
-                        duration: 3000
+                .then(response => {
+                    if (!response.ok) {
+                        console.error('Có lỗi trong khi thêm sản phẩm vào giỏ để mua ngay');
                     }
-                );
-            })
-            .catch(() => {
-                console.error('Có lỗi trong khi thêm sản phẩm vào giỏ để mua ngay');
-            });
+
+                    return response.json();
+                })
+                .then(data => {
+                    toast(
+                        {
+                            title: "Thông báo",
+                            message: data.message,
+                            type: data.success ? "success" : "warning",
+                            duration: 3000
+                        }
+                    );
+                })
+                .catch(() => {
+                    console.error('Có lỗi trong khi thêm sản phẩm vào giỏ để mua ngay');
+                });
             updateQuantityCardHolder();
             checkOutBill();
             scrollToTop();

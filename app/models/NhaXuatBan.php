@@ -78,5 +78,14 @@ class app_models_NhaXuatBan extends app_libs_DBConnection {
             'params' => [$maNXB]
         ])->delete();
     }
+
+    public function getPublisherInfo($publisherId) {
+        $publisher = $this->getPublisherById($publisherId);
+        if ($publisher) {
+            $sach_model = new app_models_Sach();
+            $publisher['books'] = $sach_model->getBooksByPublisher($publisherId);
+        }
+        return $publisher;
+    }
 }
 ?>

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 22, 2025 at 08:21 PM
+-- Generation Time: Nov 24, 2025 at 08:58 PM
 -- Server version: 10.5.28-MariaDB
 -- PHP Version: 8.2.12
 
@@ -20,6 +20,55 @@ SET time_zone = "+00:00";
 --
 -- Database: `bookstore`
 --
+
+DELIMITER $$
+--
+-- Procedures
+--
+CREATE DEFINER=`root`@`localhost` PROCEDURE `SetGiamGiaSachBanCham` (IN `soSach` INT, IN `phanTramGiam` INT)   BEGIN
+    -- 1. Xây dựng câu lệnh SQL động (Dynamic SQL)
+    -- Lưu ý: Dấu nháy đơn (') trong chuỗi phải được viết là ('') để escape.
+    SET @sql_query = CONCAT('
+        UPDATE sach s
+        JOIN (
+            SELECT 
+                s2.maSach
+            FROM 
+                sach s2
+            LEFT JOIN 
+                chitietdonhang ct ON s2.maSach = ct.maSach
+            WHERE 
+                s2.trangThai = ''Đang bán'' 
+            GROUP BY 
+                s2.maSach
+            ORDER BY 
+                SUM(COALESCE(ct.tienThu, 0)) ASC, 
+                s2.soLuongBan ASC
+            LIMIT ', soSach, ' 
+        ) AS sach_te_nhat ON s.maSach = sach_te_nhat.maSach
+        SET 
+            s.phanTramGiamGia = ', phanTramGiam
+    );
+
+    -- 2. Chuẩn bị câu lệnh từ chuỗi vừa tạo
+    PREPARE stmt FROM @sql_query;
+
+    -- 3. Thực thi câu lệnh
+    EXECUTE stmt;
+
+    -- 4. Hủy câu lệnh sau khi dùng xong để giải phóng bộ nhớ
+    DEALLOCATE PREPARE stmt;
+
+    -- (Tùy chọn) Hiển thị kết quả kiểm tra
+    -- Lưu ý: Lệnh này sẽ hiển thị TOÀN BỘ sách có mức giảm giá đó, 
+    -- không chỉ riêng sách vừa update.
+    SELECT maSach, tenSach, soLuongBan, phanTramGiamGia 
+    FROM sach 
+    WHERE phanTramGiamGia = phanTramGiam;
+    
+END$$
+
+DELIMITER ;
 
 -- --------------------------------------------------------
 
@@ -139,36 +188,42 @@ INSERT INTO `chitietdonhang` (`maDonHang`, `maSach`, `soLuong`, `tienThu`) VALUE
 --
 DELIMITER $$
 CREATE TRIGGER `trg_chiTietDonHang_tinhTien_insert` BEFORE INSERT ON `chitietdonhang` FOR EACH ROW BEGIN
-    DECLARE giaSach INT;
-    SELECT giaBan INTO giaSach FROM sach WHERE maSach = NEW.maSach;
-    SET NEW.tienThu = giaSach * NEW.soLuong;
+    DECLARE v_giaBan INT DEFAULT 0;
+    DECLARE v_giaSale INT DEFAULT 0;
+
+    -- Lấy giá bán gốc và giá sale từ bảng Sách
+    -- Sử dụng IFNULL để tránh lỗi nếu cột chưa có dữ liệu
+    SELECT giaBan, IFNULL(giaSale, 0) 
+    INTO v_giaBan, v_giaSale 
+    FROM sach 
+    WHERE maSach = NEW.maSach;
+
+    -- LOGIC TÍNH TIỀN:
+    -- Nếu có giá sale (lớn hơn 0) -> Dùng giá sale
+    IF v_giaSale > 0 THEN
+        SET NEW.tienThu = v_giaSale * NEW.soLuong;
+    
+    -- Ngược lại -> Dùng giá gốc
+    ELSE
+        SET NEW.tienThu = v_giaBan * NEW.soLuong;
+    END IF;
 END
 $$
 DELIMITER ;
 DELIMITER $$
 CREATE TRIGGER `trg_chiTietDonHang_tinhTien_update` BEFORE UPDATE ON `chitietdonhang` FOR EACH ROW BEGIN
-    DECLARE giaSach INT;
-    SELECT giaBan INTO giaSach FROM sach WHERE maSach = NEW.maSach;
-    SET NEW.tienThu = giaSach * NEW.soLuong;
-END
-$$
-DELIMITER ;
-DELIMITER $$
-CREATE TRIGGER `update_sales_on_insert` AFTER INSERT ON `chitietdonhang` FOR EACH ROW BEGIN
-    -- Khai báo biến để lưu trạng thái thanh toán
-    DECLARE payment_status VARCHAR(50); 
-    
-    -- Lấy trạng thái thanh toán từ bảng donhang
-    SELECT trangThaiThanhToan
-    INTO payment_status
-    FROM donhang
-    WHERE maDonHang = NEW.maDonHang; 
-    
-    -- Chỉ cập nhật soLuongBan nếu trạng thái là 'Đã thanh toán'
-    IF payment_status = 'Đã thanh toán' THEN
-        UPDATE sach
-        SET soLuongBan = soLuongBan + NEW.soLuong
-        WHERE maSach = NEW.maSach;
+    DECLARE v_giaBan INT DEFAULT 0;
+    DECLARE v_giaSale INT DEFAULT 0;
+
+    SELECT giaBan, IFNULL(giaSale, 0) 
+    INTO v_giaBan, v_giaSale 
+    FROM sach 
+    WHERE maSach = NEW.maSach;
+
+    IF v_giaSale > 0 THEN
+        SET NEW.tienThu = v_giaSale * NEW.soLuong;
+    ELSE
+        SET NEW.tienThu = v_giaBan * NEW.soLuong;
     END IF;
 END
 $$
@@ -231,7 +286,8 @@ INSERT INTO `chitietphieunhap` (`maPhieuNhap`, `maSach`, `giaNhap`, `soLuong`) V
 (19, 9, 100000, 2),
 (20, 2, 50000, 2),
 (21, 6, 1000, 200),
-(22, 10, 90000, 10);
+(22, 10, 90000, 10),
+(23, 80, 70000, 30);
 
 -- --------------------------------------------------------
 
@@ -621,16 +677,23 @@ INSERT INTO `donhang` (`maDonHang`, `ngayTaoDon`, `maKhachHang`, `maKhuyenMai`, 
 -- Triggers `donhang`
 --
 DELIMITER $$
-CREATE TRIGGER `trg_update_soluong_sach` AFTER UPDATE ON `donhang` FOR EACH ROW BEGIN
-  IF OLD.trangThai = 'Đang chờ xác nhận' AND NEW.trangThai = 'Đã xác nhận' THEN
+CREATE TRIGGER `trg_update_soluong_sach_va_ban_chay` AFTER UPDATE ON `donhang` FOR EACH ROW BEGIN
+  -- Khi đơn hàng thành công (Xác nhận hoặc Giao hàng): TRỪ KHO, TĂNG BÁN CHẠY
+  IF OLD.trangThai = 'Đang chờ xác nhận' AND (NEW.trangThai = 'Đã xác nhận' OR NEW.trangThai = 'Đã giao hàng') THEN
     UPDATE sach s
     JOIN chiTietDonHang ctdh ON ctdh.maSach = s.maSach
-    SET s.soLuong = s.soLuong - ctdh.soLuong
+    SET
+        s.soLuong = s.soLuong - ctdh.soLuong,       -- Trừ tồn kho
+        s.soLuongBan = s.soLuongBan + ctdh.soLuong  -- Tăng số lượng bán
     WHERE ctdh.maDonHang = NEW.maDonHang;
-  ELSEIF OLD.trangThai != 'Đang chờ xác nhận' AND NEW.trangThai = 'Đã hủy đơn' THEN
+
+  -- Khi hủy đơn hàng (đã từng thành công): TRẢ KHO, GIẢM BÁN CHẠY
+  ELSEIF (OLD.trangThai = 'Đã xác nhận' OR OLD.trangThai = 'Đã giao hàng') AND NEW.trangThai = 'Đã hủy đơn' THEN
     UPDATE sach s
     JOIN chiTietDonHang ctdh ON ctdh.maSach = s.maSach
-    SET s.soLuong = s.soLuong + ctdh.soLuong
+    SET
+        s.soLuong = s.soLuong + ctdh.soLuong,       -- Trả tồn kho
+        s.soLuongBan = s.soLuongBan - ctdh.soLuong  -- Giảm số lượng bán
     WHERE ctdh.maDonHang = NEW.maDonHang;
   END IF;
 END
@@ -923,7 +986,8 @@ INSERT INTO `phieunhap` (`maPhieuNhap`, `ngayTaoPhieu`, `maNCC`, `tongTienNhap`,
 (19, '2025-05-12 00:00:00', 3, 200, '2025-05-12 20:03:47', 'Đang chờ xác nhận', 55),
 (20, '2025-05-12 00:00:00', 2, 100, '2025-05-12 20:08:49', 'Đang chờ xác nhận', 55),
 (21, '2025-05-12 00:00:00', 3, 200000, '2025-05-12 20:10:31', 'Đang chờ xác nhận', 55),
-(22, '2025-11-20 00:00:00', 1, 900000, '2025-11-20 21:37:59', 'Đang chờ xác nhận', 75);
+(22, '2025-11-20 00:00:00', 1, 900000, '2025-11-20 21:37:59', 'Đang chờ xác nhận', 75),
+(23, '2025-11-24 00:00:00', 4, 2100000, '2025-11-25 01:19:03', 'Đã xác nhận', 1);
 
 --
 -- Triggers `phieunhap`
@@ -1082,6 +1146,7 @@ CREATE TABLE `sach` (
   `namXuatBan` int(11) DEFAULT NULL,
   `giaTran` int(11) DEFAULT NULL,
   `giaBan` int(11) DEFAULT NULL,
+  `giaSale` int(11) DEFAULT 0,
   `hinhAnh` varchar(200) DEFAULT NULL,
   `ngayCapNhat` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `soLuong` int(11) DEFAULT 0,
@@ -1096,67 +1161,102 @@ CREATE TABLE `sach` (
 -- Dumping data for table `sach`
 --
 
-INSERT INTO `sach` (`maSach`, `tenSach`, `soTrang`, `kichThuoc`, `moTa`, `maTacGia`, `maTheLoai`, `maLoaiBia`, `maNXB`, `namXuatBan`, `giaTran`, `giaBan`, `hinhAnh`, `ngayCapNhat`, `soLuong`, `trangThai`, `soLuongBan`, `tongDanhGia`, `trungBinhDanhGia`, `phanTramGiamGia`) VALUES
-(1, 'Tôi thấy hoa vàng trên cỏ xanhh', 375, 15, 'Tiểu thuyết về tuổi thơ đầy hoài niệm', 1, 1, 2, 5, 2022, 76000, 96000, '1.png', '2025-11-22 00:00:00', 72, 'Dừng bán', 0, 0, 0.0, 0),
-(2, 'Người lớn không khóc', 325, 13, 'Tản văn đầy cảm xúc về cuộc sống và tình cảm', 4, 1, 2, 5, 2025, 60000, 75000, '2.png', '2025-11-21 10:52:46', 62, 'Đang bán', 5, 0, 0.0, 0),
-(3, 'Đừng lựa chọn an nhàn khi còn trẻ', 280, 14, 'Sách self-help dành cho người trẻ', 3, 5, 3, 3, 2025, 85000, 99000, '3.png', '2025-05-12 10:38:07', 123, 'Đang bán', 0, 0, 0.0, 0),
-(4, 'Cho tôi xin một vé đi tuổi thơ', 250, 13, 'Cuốn sách tuổi thơ đầy kỷ niệm', 1, 1, 1, 1, 2025, 65000, 80000, '4.png', '2025-11-21 10:52:46', 409, 'Đang bán', 3, 0, 0.0, 0),
-(5, 'Bắt trẻ đồng xanh', 277, 14, 'Tiểu thuyết văn học nổi tiếng', 5, 1, 2, 5, 2025, 90000, 110000, '5.png', '2025-11-22 23:27:54', 64, 'Đang bán', 0, 1, 3.0, 0),
-(6, 'Gió đầu mùa', 200, 12, 'Tập truyện ngắn của Thạch Lam', 6, 2, 3, 4, 2025, 50000, 70000, '6.png', '2025-11-22 21:22:30', 76, 'Đang bán', 1, 1, 5.0, 0),
-(7, 'Cánh đồng bất tận', 320, 14, 'Truyện ngắn đặc sắc của Nguyễn Ngọc Tư', 7, 2, 1, 6, 2025, 70000, 85000, '7.png', '2025-11-21 10:52:46', 78, 'Đang bán', 2, 0, 0.0, 0),
-(8, 'Truyện ngắn Nguyễn Huy Thiệp', 450, 15, 'Tuyển tập truyện ngắn hay nhất của Nguyễn Huy Thiệp', 8, 2, 2, 7, 2025, 100000, 120000, '8.png', '2025-05-14 03:07:10', 81, 'Đang bán', 0, 0, 0.0, 0),
-(9, 'Những người khốn khổ', 1200, 17, 'Tác phẩm kinh điển của Victor Hugo', 5, 1, 5, 5, 2025, 200000, 250000, '9.png', '2025-05-14 03:08:45', 36, 'Đang bán', 0, 0, 0.0, 0),
-(10, 'Đắc Nhân Tâm', 320, 13, 'Cuốn sách kỹ năng sống nổi tiếng', 4, 5, 1, 2, 2025, 90000, 115000, '10.png', '2025-05-10 01:44:05', 39, 'Đang bán', 0, 0, 0.0, 0),
-(11, 'Nhà giả kim', 208, 14, 'Tác phẩm kinh điển của Paulo Coelho', 7, 1, 1, 3, 2025, 70000, 90000, '11.png', '2025-05-10 03:20:13', 176, 'Đang bán', 0, 0, 0.0, 0),
-(12, 'Muôn kiếp nhân sinh', 400, 15, 'Tác phẩm về tâm linh và nhân quả', 6, 5, 2, 6, 2025, 160000, 180000, '12.png', '2025-05-12 10:38:07', 134, 'Đang bán', 0, 0, 0.0, 0),
-(13, 'Dám nghĩ lớn', 250, 14, 'Sách phát triển tư duy thành công', 8, 5, 3, 4, 2025, 85000, 99000, '13.png', '2025-05-10 01:44:05', 43, 'Đang bán', 0, 0, 0.0, 0),
-(14, 'Chiến tranh và hòa bình', 1300, 18, 'Tiểu thuyết lịch sử nổi tiếng của Tolstoy', 5, 7, 4, 5, 2025, 230000, 280000, '14.png', '2025-11-21 10:52:46', 148, 'Đang bán', 1, 0, 0.0, 0),
-(15, 'Lịch sử thế giới', 700, 16, 'Cuốn sách tổng hợp về lịch sử nhân loại', 9, 8, 3, 7, 2025, 150000, 180000, '15.png', '2025-05-10 01:44:05', 80, 'Đang bán', 0, 0, 0.0, 0),
-(16, 'Sapiens: Lược sử loài người', 450, 15, 'Cuốn sách lịch sử nhân loại nổi tiếng', 10, 8, 2, 4, 2025, 180000, 210000, '16.png', '2025-05-10 01:44:05', 73, 'Đang bán', 0, 0, 0.0, 0),
-(17, '1984', 328, 14, 'Tiểu thuyết dystopia kinh điển', 3, 1, 1, 3, 2025, 95000, 115000, '17.png', '2025-05-10 01:44:05', 44, 'Đang bán', 0, 0, 0.0, 0),
-(18, 'Dune', 800, 17, 'Tiểu thuyết khoa học viễn tưởng nổi tiếng', 4, 9, 5, 8, 2025, 220000, 260000, '18.png', '2025-05-14 03:02:57', 67, 'Đang bán', 0, 0, 0.0, 0),
-(19, 'Harry Potter và Hòn đá phù thủy', 350, 15, 'Tập đầu tiên của Harry Potter', 2, 9, 4, 9, 2025, 180000, 210000, '19.png', '2025-11-22 18:59:39', 45, 'Đang bán', 2, 1, 5.0, 0),
-(20, 'Sherlock Holmes toàn tập', 1200, 17, 'Bộ truyện trinh thám kinh điển', 1, 10, 1, 10, 2025, 250000, 300000, '20.png', '2025-11-23 01:13:09', 53, 'Đang bán', 1, 3, 3.7, 0),
-(21, 'Bố già', 600, 16, 'Tiểu thuyết kinh điển về thế giới mafia', 1, 1, 1, 1, 2025, 180000, 220000, '21.png', '2025-11-21 10:52:46', 53, 'Đang bán', 3, 0, 0.0, 0),
-(22, 'Thiên thần và ác quỷ', 710, 16, 'Tiểu thuyết trinh thám ly kỳ của Dan Brown', 2, 10, 2, 2, 2025, 150000, 180000, '22.png', '2025-05-10 01:44:05', 62, 'Đang bán', 0, 0, 0.0, 0),
-(23, 'Mật mã Da Vinci', 689, 16, 'Tiểu thuyết trinh thám bí ẩn nổi tiếng', 3, 10, 3, 3, 2025, 160000, 190000, '23.png', '2025-05-10 01:44:05', 72, 'Đang bán', 0, 0, 0.0, 0),
-(24, 'Hoàng tử bé', 120, 12, 'Tác phẩm văn học nổi tiếng về tình yêu và cuộc sống', 4, 1, 4, 4, 2025, 50000, 70000, '24.png', '2025-11-23 01:21:51', 40, 'Đang bán', 4, 0, 0.0, 20),
-(25, 'Hai vạn dặm dưới đáy biển', 500, 15, 'Tác phẩm khoa học viễn tưởng kinh điển', 5, 9, 5, 5, 2025, 120000, 150000, '25.png', '2025-05-10 01:44:05', 76, 'Đang bán', 0, 0, 0.0, 0),
-(26, 'Tội ác và trừng phạt', 670, 17, 'Tác phẩm kinh điển của Dostoyevsky', 6, 1, 1, 6, 2025, 180000, 220000, '26.png', '2025-11-21 10:52:46', 37, 'Đang bán', 1, 0, 0.0, 0),
-(27, 'Những cuộc phiêu lưu của Tom Sawyer', 300, 14, 'Tiểu thuyết thiếu nhi kinh điển', 7, 1, 2, 7, 2025, 80000, 100000, '27.png', '2025-05-10 01:44:05', 62, 'Đang bán', 0, 0, 0.0, 0),
-(28, 'Bí mật tư duy triệu phú', 256, 14, 'Sách kỹ năng tài chính nổi tiếng', 8, 5, 3, 8, 2025, 90000, 115000, '28.png', '2025-05-10 01:44:05', 39, 'Đang bán', 0, 0, 0.0, 0),
-(29, 'Trí tuệ Do Thái', 420, 15, 'Sách phát triển tư duy', 9, 5, 4, 9, 2025, 120000, 140000, '29.png', '2025-05-10 01:44:05', 80, 'Đang bán', 0, 0, 0.0, 0),
-(30, 'Suy nghĩ nhanh và chậm', 610, 16, 'Sách tâm lý học kinh điển', 10, 5, 5, 10, 2025, 180000, 200000, '30.png', '2025-05-10 01:44:05', 50, 'Đang bán', 0, 0, 0.0, 0),
-(31, 'Bí mật của may mắn', 200, 12, 'Câu chuyện truyền cảm hứng về thành công', 1, 5, 1, 2, 2025, 70000, 85000, '31.png', '2025-11-22 18:08:35', 31, 'Đang bán', 5, 1, 5.0, 0),
-(32, 'Tuổi trẻ đáng giá bao nhiêu?', 280, 13, 'Sách self-help dành cho giới trẻ', 2, 5, 2, 3, 2025, 75000, 90000, '32.png', '2025-11-23 01:02:43', 29, 'Đang bán', 0, 1, 3.0, 0),
-(33, 'Cách nghĩ để thành công', 320, 14, 'Cuốn sách kinh điển về thành công', 3, 5, 3, 4, 2025, 90000, 110000, '33.png', '2025-05-10 01:44:05', 74, 'Đang bán', 0, 0, 0.0, 0),
-(34, 'Tâm lý học đám đông', 250, 14, 'Cuốn sách tâm lý học nổi tiếng', 4, 5, 4, 5, 2025, 95000, 115000, '34.png', '2025-05-10 01:44:05', 50, 'Đang bán', 0, 0, 0.0, 0),
-(35, 'Cư xử như đàn bà suy nghĩ như đàn ông', 340, 15, 'Cuốn sách tâm lý tình cảm phổ biến', 5, 5, 5, 6, 2025, 100000, 120000, '35.png', '2025-05-10 01:44:05', 49, 'Đang bán', 0, 0, 0.0, 0),
-(36, 'Lược sử thời gian', 280, 14, 'Cuốn sách khoa học nổi tiếng của Stephen Hawking', 6, 8, 1, 7, 2025, 140000, 170000, '36.png', '2025-05-10 01:44:05', 64, 'Đang bán', 0, 0, 0.0, 0),
-(37, 'Bách khoa toàn thư vũ trụ', 500, 17, 'Cuốn sách khoa học về vũ trụ', 7, 8, 2, 8, 2025, 200000, 230000, '37.png', '2025-05-10 01:44:05', 42, 'Đang bán', 0, 0, 0.0, 0),
-(38, 'Hành trình về phương Đông', 320, 14, 'Cuốn sách huyền bí về tri thức phương Đông', 8, 5, 3, 9, 2025, 120000, 150000, '38.png', '2025-05-10 01:44:05', 39, 'Đang bán', 0, 0, 0.0, 0),
-(39, 'Vũ trụ trong vỏ hạt dẻ', 450, 16, 'Cuốn sách khoa học của Stephen Hawking', 9, 8, 4, 10, 2025, 180000, 200000, '39.png', '2025-05-10 01:44:05', 38, 'Đang bán', 0, 0, 0.0, 0),
-(40, 'Những người sống sót', 600, 16, 'Tiểu thuyết tâm lý ly kỳ', 10, 10, 5, 1, 2025, 150000, 180000, '40.png', '2025-05-10 01:44:05', 46, 'Đang bán', 0, 0, 0.0, 0),
-(41, 'Hạt giống tâm hồn', 250, 14, 'Tuyển tập những câu chuyện truyền cảm hứng', 1, 5, 1, 1, 2025, 70000, 90000, '41.png', '2025-11-22 21:22:30', 33, 'Đang bán', 0, 0, 0.0, 0),
-(42, 'Giết con chim nhại', 400, 16, 'Tiểu thuyết kinh điển về phân biệt chủng tộc', 2, 1, 2, 2, 2025, 120000, 150000, '42.png', '2025-05-10 01:44:05', 56, 'Đang bán', 0, 0, 0.0, 0),
-(43, 'Tôi là Bêtô', 300, 14, 'Truyện thiếu nhi nổi tiếng của Nguyễn Nhật Ánh', 3, 1, 3, 3, 2025, 80000, 100000, '43.png', '2025-05-10 01:44:05', 47, 'Đang bán', 0, 0, 0.0, 0),
-(44, 'Cuộc sống không giới hạn', 280, 14, 'Tự truyện của Nick Vujicic', 4, 5, 4, 4, 2025, 90000, 110000, '44.png', '2025-05-10 01:44:05', 36, 'Đang bán', 0, 0, 0.0, 0),
-(45, 'Bí mật của Phan Thiên Ân', 350, 15, 'Cuốn sách phát triển bản thân đầy triết lý', 5, 5, 5, 5, 2025, 95000, 120000, '45.png', '2025-05-10 01:44:05', 61, 'Đang bán', 0, 0, 0.0, 0),
-(46, 'Sherlock Holmes: Dấu bộ tứ', 400, 15, 'Tập truyện trinh thám nổi tiếng', 6, 10, 1, 6, 2025, 140000, 170000, '46.png', '2025-05-10 01:44:05', 66, 'Đang bán', 0, 0, 0.0, 0),
-(47, 'Thế giới phẳng', 500, 17, 'Cuốn sách về toàn cầu hóa', 7, 8, 2, 7, 2025, 160000, 190000, '47.png', '2025-05-10 01:44:05', 68, 'Đang bán', 0, 0, 0.0, 0),
-(48, 'Nhà thờ Đức Bà Paris', 650, 17, 'Tác phẩm kinh điển của Victor Hugo', 8, 1, 3, 8, 2025, 200000, 230000, '48.png', '2025-11-22 23:50:35', 39, 'Đang bán', 0, 1, 2.0, 0),
-(49, 'Lão Hạc', 120, 12, 'Truyện ngắn nổi tiếng của Nam Cao', 9, 2, 4, 9, 2025, 50000, 70000, '49.png', '2025-11-21 10:52:46', 52, 'Đang bán', 6, 0, 0.0, 0),
-(50, 'Những kẻ xuất chúng', 320, 14, 'Cuốn sách về sự thành công', 10, 5, 5, 10, 2025, 130000, 160000, '50.png', '2025-05-10 01:44:05', 36, 'Đang bán', 0, 0, 0.0, 0),
-(51, 'Những tấm lòng cao cả', 280, 13, 'Truyện thiếu nhi kinh điển', 1, 1, 1, 2, 2025, 70000, 90000, '51.png', '2025-05-10 01:44:05', 77, 'Đang bán', 0, 0, 0.0, 0),
-(52, 'Đông A liệt truyện', 750, 18, 'Lịch sử nhà Trần', 2, 8, 2, 3, 2025, 180000, 220000, '52.png', '2025-11-21 10:52:46', 43, 'Đang bán', 1, 0, 0.0, 0),
-(53, 'Lược sử tương lai', 430, 15, 'Sách khoa học dự đoán tương lai', 3, 8, 3, 4, 2025, 160000, 190000, '53.png', '2025-05-10 01:44:05', 57, 'Đang bán', 0, 0, 0.0, 0),
-(54, 'Truyện Kiều', 500, 16, 'Tác phẩm kinh điển của Nguyễn Du', 4, 2, 4, 5, 2025, 100000, 130000, '54.png', '2025-05-10 01:44:05', 74, 'Đang bán', 0, 0, 0.0, 0),
-(55, 'Sống xanh', 270, 14, 'Cuốn sách về bảo vệ môi trường', 5, 5, 5, 6, 2025, 110000, 130000, '55.png', '2025-05-10 01:44:05', 70, 'Đang bán', 0, 0, 0.0, 0),
-(56, 'Kẻ trộm sách', 600, 17, 'Tiểu thuyết về chiến tranh và sách', 6, 1, 1, 7, 2025, 150000, 180000, '56.png', '2025-05-14 03:08:45', 25, 'Đang bán', 0, 0, 0.0, 0),
-(57, 'Sự im lặng của bầy cừu', 380, 14, 'Tiểu thuyết trinh thám nổi tiếng', 7, 10, 2, 8, 2025, 140000, 170000, '57.png', '2025-05-10 01:44:05', 43, 'Đang bán', 0, 0, 0.0, 0),
-(58, 'Nghệ thuật tư duy rành mạch', 350, 14, 'Sách về cách tư duy hiệu quả', 8, 5, 3, 9, 2025, 130000, 160000, '58.png', '2025-05-10 01:44:05', 47, 'Đang bán', 0, 0, 0.0, 0),
-(59, 'Làm giàu không khó', 300, 14, 'Cuốn sách dạy kinh doanh', 9, 5, 4, 10, 2025, 90000, 110000, '59.png', '2025-05-10 01:44:05', 78, 'Đang bán', 0, 0, 0.0, 0),
-(60, 'Mắt biếc', 260, 13, 'Tiểu thuyết nổi tiếng của Nguyễn Nhật Ánh', 10, 1, 5, 1, 2025, 80000, 100000, '60.png', '2025-05-10 01:44:05', 67, 'Đang bán', 0, 0, 0.0, 0);
+INSERT INTO `sach` (`maSach`, `tenSach`, `soTrang`, `kichThuoc`, `moTa`, `maTacGia`, `maTheLoai`, `maLoaiBia`, `maNXB`, `namXuatBan`, `giaTran`, `giaBan`, `giaSale`, `hinhAnh`, `ngayCapNhat`, `soLuong`, `trangThai`, `soLuongBan`, `tongDanhGia`, `trungBinhDanhGia`, `phanTramGiamGia`) VALUES
+(1, 'Tôi thấy hoa vàng trên cỏ xanhh', 375, 15, 'Một tác phẩm nhẹ nhàng, trong trẻo nhưng cũng đầy day dứt của Nguyễn Nhật Ánh. Cuốn sách đưa người đọc trở về với làng quê Việt Nam nghèo khó nhưng đầm ấm, qua đôi mắt của cậu bé Thiều. Đó là những rung động đầu đời, tình anh em cảm động và những bài học về sự trưởng thành. Một tấm vé trở về tuổi thơ đẹp đẽ nhất.', 1, 1, 2, 5, 2022, 76000, 96000, 0, '1.png', '2025-11-25 00:41:33', 72, 'Dừng bán', 0, 0, 0.0, 0),
+(2, 'Người lớn không khóc', 325, 13, 'Tản văn đầy cảm xúc về cuộc sống và tình cảm', 4, 1, 2, 5, 2025, 60000, 75000, 0, '2.png', '2025-11-21 10:52:46', 62, 'Đang bán', 5, 0, 0.0, 0),
+(3, 'Đừng lựa chọn an nhàn khi còn trẻ', 280, 14, 'Sách self-help dành cho người trẻ', 3, 5, 3, 3, 2025, 85000, 99000, 0, '3.png', '2025-11-24 23:43:50', 123, 'Đang bán', 0, 0, 0.0, 0),
+(4, 'Cho tôi xin một vé đi tuổi thơ', 250, 13, '“Cho tôi xin một vé đi tuổi thơ” không chỉ là sách dành cho thiếu nhi, mà là dành cho những ai từng là trẻ con. Tác phẩm là chuyến tàu ngược thời gian tìm về cậu bé Mùi, Hải cò, Tí sún... với những trò nghịch ngợm dở khóc dở cười, để rồi nhận ra người lớn đôi khi thật rắc rối và khó hiểu.', 1, 1, 1, 1, 2025, 65000, 80000, 0, '4.png', '2025-11-25 00:41:33', 409, 'Đang bán', 3, 0, 0.0, 0),
+(5, 'Bắt trẻ đồng xanh', 277, 14, 'Tiểu thuyết văn học nổi tiếng', 5, 1, 2, 5, 2025, 90000, 110000, 0, '5.png', '2025-11-23 15:16:42', 64, 'Đang bán', 1, 1, 3.0, 0),
+(6, 'Gió đầu mùa', 200, 12, 'Tập truyện ngắn tinh tế và đượm buồn của Thạch Lam. Văn của ông không có cốt truyện ly kỳ, mà đi sâu vào thế giới nội tâm, những cảm xúc mong manh của con người trước sự thay đổi của đất trời và phận người. \"Gió đầu mùa\" là tiếng thở dài thương cảm cho những kiếp người nhỏ bé trong xã hội cũ.', 6, 2, 3, 4, 2025, 50000, 70000, 0, '6.png', '2025-11-25 00:41:33', 76, 'Đang bán', 6, 1, 5.0, 0),
+(7, 'Cánh đồng bất tận', 320, 14, 'Một tiếng kêu xé lòng từ vùng sông nước miền Tây. Nguyễn Ngọc Tư đã khắc họa nên một bức tranh hiện thực trần trụi, đau đớn nhưng cũng đầy nhân văn về thân phận những người phụ nữ, những đứa trẻ lớn lên không mái nhà, lênh đênh trên những cánh đồng. Tác phẩm gây ám ảnh sâu sắc về tình người và sự tha hóa.', 7, 2, 1, 6, 2025, 70000, 85000, 0, '7.png', '2025-11-25 00:41:33', 78, 'Đang bán', 2, 0, 0.0, 0),
+(8, 'Truyện ngắn Nguyễn Huy Thiệp', 450, 15, 'Tuyển tập truyện ngắn hay nhất của Nguyễn Huy Thiệp', 8, 2, 2, 7, 2025, 100000, 120000, 0, '8.png', '2025-11-23 15:16:42', 81, 'Đang bán', 1, 0, 0.0, 0),
+(9, 'Những người khốn khổ', 1200, 17, 'Kiệt tác vĩ đại của Victor Hugo và văn học Pháp. Tác phẩm là bản anh hùng ca về tình yêu thương, lòng nhân ái và sự chuộc tội giữa bối cảnh xã hội Paris đầy biến động. Câu chuyện về Jean Valjean - từ một tù khổ sai trở thành người cha vĩ đại - sẽ lấy đi nước mắt của bất kỳ ai.', 5, 1, 5, 5, 2025, 200000, 250000, 0, '9.png', '2025-11-25 00:44:41', 36, 'Đang bán', 11, 0, 0.0, 0),
+(10, 'Đắc Nhân Tâm', 320, 13, 'Cuốn sách \"gối đầu giường\" của nhiều thế hệ về nghệ thuật ứng xử và thu phục lòng người. Dale Carnegie không dạy những thủ thuật giả tạo, mà hướng dẫn cách thấu hiểu, tôn trọng và quan tâm chân thành đến người khác. Đây là chìa khóa để thành công trong giao tiếp và xây dựng các mối quan hệ bền vững.', 4, 5, 1, 2, 2025, 90000, 115000, 0, '10.png', '2025-11-25 00:44:52', 39, 'Đang bán', 0, 0, 0.0, 0),
+(11, 'Nhà giả kim', 208, 14, 'Cuốn sách bán chạy chỉ sau Kinh Thánh. Hành trình đi tìm kho báu của chàng chăn cừu Santiago thực chất là hành trình đi tìm \"Vận mệnh\" của chính mình. Với văn phong giản dị nhưng thấm đẫm triết lý phương Đông, Paulo Coelho nhắn nhủ: \"Khi bạn khao khát một điều gì đó, cả vũ trụ sẽ hợp lực giúp bạn đạt được điều đó\".', 7, 1, 1, 3, 2025, 70000, 90000, 0, '11.png', '2025-11-25 00:44:41', 176, 'Đang bán', 0, 0, 0.0, 0),
+(12, 'Muôn kiếp nhân sinh', 400, 15, 'Tác phẩm về tâm linh và nhân quả', 6, 5, 2, 6, 2025, 160000, 180000, 126000, '12.png', '2025-11-25 00:18:46', 134, 'Đang bán', 0, 0, 0.0, 30),
+(13, 'Dám nghĩ lớn', 250, 14, 'Sách phát triển tư duy thành công', 8, 5, 3, 4, 2025, 85000, 99000, 69300, '13.png', '2025-11-25 00:18:46', 43, 'Đang bán', 0, 0, 0.0, 30),
+(14, 'Chiến tranh và hòa bình', 1300, 18, 'Tiểu thuyết lịch sử nổi tiếng của Tolstoy', 5, 7, 4, 5, 2025, 230000, 280000, 0, '14.png', '2025-11-21 10:52:46', 148, 'Đang bán', 1, 0, 0.0, 0),
+(15, 'Lịch sử thế giới', 700, 16, 'Cuốn sách tổng hợp về lịch sử nhân loại', 9, 8, 3, 7, 2025, 150000, 180000, 0, '15.png', '2025-05-10 01:44:05', 80, 'Đang bán', 0, 0, 0.0, 0),
+(16, 'Sapiens: Lược sử loài người', 450, 15, 'Cuốn sách lịch sử nhân loại nổi tiếng', 10, 8, 2, 4, 2025, 180000, 210000, 0, '16.png', '2025-05-10 01:44:05', 73, 'Đang bán', 0, 0, 0.0, 0),
+(17, '1984', 328, 14, 'Tiểu thuyết dystopia kinh điển', 3, 1, 1, 3, 2025, 95000, 115000, 0, '17.png', '2025-05-10 01:44:05', 44, 'Đang bán', 0, 0, 0.0, 0),
+(18, 'Dune', 800, 17, 'Tiểu thuyết khoa học viễn tưởng nổi tiếng', 4, 9, 5, 8, 2025, 220000, 260000, 0, '18.png', '2025-11-23 15:16:42', 67, 'Đang bán', 6, 0, 0.0, 0),
+(19, 'Harry Potter và Hòn đá phù thủy', 350, 15, 'Khởi đầu của huyền thoại. Cậu bé Harry Potter mồ côi sống trong gầm cầu thang bỗng phát hiện mình là một phù thủy nổi tiếng. Chuyến tàu tốc hành đưa cậu đến trường Hogwarts, nơi bắt đầu những cuộc phiêu lưu kỳ thú, tình bạn diệu kỳ và cuộc chiến chống lại thế lực hắc ám. Một thế giới phép thuật mở ra rực rỡ trước mắt người đọc.', 2, 9, 4, 9, 2025, 180000, 210000, 0, '19.png', '2025-11-25 00:45:06', 45, 'Đang bán', 7, 1, 5.0, 0),
+(20, 'Sherlock Holmes toàn tập', 1200, 17, 'Tuyển tập đầy đủ nhất về vị thám tử tài ba Sherlock Holmes và bác sĩ Watson. Với khả năng quan sát tinh tường và tư duy diễn dịch siêu phàm, Holmes đã phá giải những vụ án hóc búa nhất sương mù London. Tác phẩm của Conan Doyle là chuẩn mực không thể vượt qua của thể loại trinh thám cổ điển.', 1, 10, 1, 10, 2025, 250000, 300000, 0, '20.png', '2025-11-25 00:45:06', 53, 'Đang bán', 5, 3, 3.7, 0),
+(21, 'Bố già', 600, 16, 'Đỉnh cao của dòng văn học tội phạm. Mario Puzo đã tạo dựng nên một thế giới Mafia đầy quyền lực, tàn bạo nhưng cũng trọng danh dự và tình cảm gia đình. Hình tượng Don Vito Corleone trở thành tượng đài bất hủ về người đàn ông bản lĩnh, mưu lược và nguyên tắc: \"Một người đàn ông không dành thời gian cho gia đình thì không bao giờ trở thành người đàn ông thực sự\".', 1, 1, 1, 1, 2025, 180000, 220000, 0, '21.png', '2025-11-25 00:44:41', 53, 'Đang bán', 3, 0, 0.0, 0),
+(22, 'Thiên thần và ác quỷ', 710, 16, 'Tiểu thuyết trinh thám ly kỳ của Dan Brown', 2, 10, 2, 2, 2025, 150000, 180000, 126000, '22.png', '2025-11-25 00:18:46', 62, 'Đang bán', 0, 0, 0.0, 30),
+(23, 'Mật mã Da Vinci', 689, 16, 'Một cuộc chạy đua nghẹt thở giải mã những bí ẩn tôn giáo chấn động lịch sử. Dan Brown dẫn dắt người đọc đi từ bất ngờ này đến bất ngờ khác thông qua các ký hiệu, mật mã ẩn giấu trong các tác phẩm nghệ thuật của Da Vinci. Kịch tính, thông minh và đầy tranh cãi, đây là cuốn sách bạn không thể đặt xuống khi chưa đọc trang cuối cùng.', 3, 10, 3, 3, 2025, 160000, 190000, 0, '23.png', '2025-11-25 00:45:06', 72, 'Đang bán', 0, 0, 0.0, 0),
+(24, 'Hoàng tử bé', 120, 12, 'Một câu chuyện cổ tích dành cho người lớn. Qua cuộc phiêu lưu của Hoàng tử bé từ tiểu tinh cầu B612 đến Trái Đất, Saint-Exupéry đã gửi gắm những thông điệp sâu sắc về tình yêu, tình bạn và bản chất của con người. \"Người ta chỉ nhìn thấy thật rõ ràng bằng trái tim. Cái cốt yếu thì mắt thường không thấy được\".', 4, 1, 4, 4, 2025, 50000, 70000, 0, '24.png', '2025-11-25 00:44:41', 40, 'Đang bán', 4, 0, 0.0, 0),
+(25, 'Hai vạn dặm dưới đáy biển', 500, 15, 'Tác phẩm khoa học viễn tưởng kinh điển', 5, 9, 5, 5, 2025, 120000, 150000, 0, '25.png', '2025-05-10 01:44:05', 76, 'Đang bán', 0, 0, 0.0, 0),
+(26, 'Tội ác và trừng phạt', 670, 17, 'Tác phẩm kinh điển của Dostoyevsky', 6, 1, 1, 6, 2025, 180000, 220000, 0, '26.png', '2025-11-23 15:16:42', 37, 'Đang bán', 28, 0, 0.0, 0),
+(27, 'Những cuộc phiêu lưu của Tom Sawyer', 300, 14, 'Tiểu thuyết thiếu nhi kinh điển', 7, 1, 2, 7, 2025, 80000, 100000, 0, '27.png', '2025-11-24 23:44:03', 62, 'Đang bán', 0, 0, 0.0, 0),
+(28, 'Bí mật tư duy triệu phú', 256, 14, 'Sách kỹ năng tài chính nổi tiếng', 8, 5, 3, 8, 2025, 90000, 115000, 80500, '28.png', '2025-11-25 00:18:46', 39, 'Đang bán', 0, 0, 0.0, 30),
+(29, 'Trí tuệ Do Thái', 420, 15, 'Sách phát triển tư duy', 9, 5, 4, 9, 2025, 120000, 140000, 0, '29.png', '2025-05-10 01:44:05', 80, 'Đang bán', 0, 0, 0.0, 0),
+(30, 'Suy nghĩ nhanh và chậm', 610, 16, 'Sách tâm lý học kinh điển', 10, 5, 5, 10, 2025, 180000, 200000, 140000, '30.png', '2025-11-25 00:18:46', 50, 'Đang bán', 0, 0, 0.0, 30),
+(31, 'Bí mật của may mắn', 200, 12, 'Câu chuyện truyền cảm hứng về thành công', 1, 5, 1, 2, 2025, 70000, 85000, 0, '31.png', '2025-11-23 15:16:42', 31, 'Đang bán', 6, 1, 5.0, 0),
+(32, 'Tuổi trẻ đáng giá bao nhiêu?', 280, 13, 'Cuốn sách truyền cảm hứng mạnh mẽ cho giới trẻ Việt Nam. Rosie Nguyễn chia sẻ những bài học thực tế về việc học, làm việc và đi. Đừng để tuổi trẻ trôi qua trong tẻ nhạt và hối tiếc. Hãy sống, trải nghiệm và cống hiến hết mình, vì \"Tuổi trẻ giống như một cơn mưa rào, cho dù bị cảm lạnh vẫn muốn quay lại để được ướt thêm một lần nữa\".', 2, 5, 2, 3, 2025, 75000, 90000, 0, '32.png', '2025-11-25 00:44:53', 29, 'Đang bán', 1, 1, 3.0, 0),
+(33, 'Cách nghĩ để thành công', 320, 14, 'Cuốn sách kinh điển về thành công', 3, 5, 3, 4, 2025, 90000, 110000, 0, '33.png', '2025-05-10 01:44:05', 74, 'Đang bán', 0, 0, 0.0, 0),
+(34, 'Tâm lý học đám đông', 250, 14, 'Cuốn sách tâm lý học nổi tiếng', 4, 5, 4, 5, 2025, 95000, 115000, 0, '34.png', '2025-05-10 01:44:05', 50, 'Đang bán', 0, 0, 0.0, 0),
+(35, 'Cư xử như đàn bà suy nghĩ như đàn ông', 340, 15, 'Cuốn sách tâm lý tình cảm phổ biến', 5, 5, 5, 6, 2025, 100000, 120000, 0, '35.png', '2025-05-10 01:44:05', 49, 'Đang bán', 0, 0, 0.0, 0),
+(36, 'Lược sử thời gian', 280, 14, 'Cuốn sách khoa học nổi tiếng của Stephen Hawking', 6, 8, 1, 7, 2025, 140000, 170000, 119000, '36.png', '2025-11-25 00:18:46', 64, 'Đang bán', 0, 0, 0.0, 30),
+(37, 'Bách khoa toàn thư vũ trụ', 500, 17, 'Cuốn sách khoa học về vũ trụ', 7, 8, 2, 8, 2025, 200000, 230000, 161000, '37.png', '2025-11-25 00:18:46', 42, 'Đang bán', 0, 0, 0.0, 30),
+(38, 'Hành trình về phương Đông', 320, 14, 'Cuốn sách huyền bí về tri thức phương Đông', 8, 5, 3, 9, 2025, 120000, 150000, 0, '38.png', '2025-05-10 01:44:05', 39, 'Đang bán', 0, 0, 0.0, 0),
+(39, 'Vũ trụ trong vỏ hạt dẻ', 450, 16, 'Cuốn sách khoa học của Stephen Hawking', 9, 8, 4, 10, 2025, 180000, 200000, 0, '39.png', '2025-05-10 01:44:05', 38, 'Đang bán', 0, 0, 0.0, 0),
+(40, 'Những người sống sót', 600, 16, 'Tiểu thuyết tâm lý ly kỳ', 10, 10, 5, 1, 2025, 150000, 180000, 0, '40.png', '2025-05-10 01:44:05', 46, 'Đang bán', 0, 0, 0.0, 0),
+(41, 'Hạt giống tâm hồn', 250, 14, 'Tuyển tập những câu chuyện truyền cảm hứng', 1, 5, 1, 1, 2025, 70000, 90000, 0, '41.png', '2025-11-23 15:16:42', 33, 'Đang bán', 2, 0, 0.0, 0),
+(42, 'Giết con chim nhại', 400, 16, 'Tiểu thuyết kinh điển về phân biệt chủng tộc', 2, 1, 2, 2, 2025, 120000, 150000, 0, '42.png', '2025-05-10 01:44:05', 56, 'Đang bán', 0, 0, 0.0, 0),
+(43, 'Tôi là Bêtô', 300, 14, 'Truyện thiếu nhi nổi tiếng của Nguyễn Nhật Ánh', 3, 1, 3, 3, 2025, 80000, 100000, 0, '43.png', '2025-05-10 01:44:05', 47, 'Đang bán', 0, 0, 0.0, 0),
+(44, 'Cuộc sống không giới hạn', 280, 14, 'Tự truyện của Nick Vujicic', 4, 5, 4, 4, 2025, 90000, 110000, 77000, '44.png', '2025-11-25 00:18:46', 36, 'Đang bán', 0, 0, 0.0, 30),
+(45, 'Bí mật của Phan Thiên Ân', 350, 15, 'Cuốn sách phát triển bản thân đầy triết lý', 5, 5, 5, 5, 2025, 95000, 120000, 0, '45.png', '2025-05-10 01:44:05', 61, 'Đang bán', 0, 0, 0.0, 0),
+(46, 'Sherlock Holmes: Dấu bộ tứ', 400, 15, 'Tập truyện trinh thám nổi tiếng', 6, 10, 1, 6, 2025, 140000, 170000, 0, '46.png', '2025-05-10 01:44:05', 66, 'Đang bán', 0, 0, 0.0, 0),
+(47, 'Thế giới phẳng', 500, 17, 'Cuốn sách về toàn cầu hóa', 7, 8, 2, 7, 2025, 160000, 190000, 0, '47.png', '2025-05-10 01:44:05', 68, 'Đang bán', 0, 0, 0.0, 0),
+(48, 'Nhà thờ Đức Bà Paris', 650, 17, 'Tác phẩm kinh điển của Victor Hugo', 8, 1, 3, 8, 2025, 200000, 230000, 0, '48.png', '2025-11-23 15:16:42', 39, 'Đang bán', 19, 1, 2.0, 0),
+(49, 'Lão Hạc', 120, 12, 'Truyện ngắn nổi tiếng của Nam Cao', 9, 2, 4, 9, 2025, 50000, 70000, 0, '49.png', '2025-11-21 10:52:46', 52, 'Đang bán', 6, 0, 0.0, 0),
+(50, 'Những kẻ xuất chúng', 320, 14, 'Cuốn sách về sự thành công', 10, 5, 5, 10, 2025, 130000, 160000, 0, '50.png', '2025-05-10 01:44:05', 36, 'Đang bán', 0, 0, 0.0, 0),
+(51, 'Những tấm lòng cao cả', 280, 13, 'Truyện thiếu nhi kinh điển', 1, 1, 1, 2, 2025, 70000, 90000, 0, '51.png', '2025-11-24 23:44:13', 77, 'Đang bán', 0, 0, 0.0, 0),
+(52, 'Đông A liệt truyện', 750, 18, 'Lịch sử nhà Trần', 2, 8, 2, 3, 2025, 180000, 220000, 0, '52.png', '2025-11-21 10:52:46', 43, 'Đang bán', 1, 0, 0.0, 0),
+(53, 'Lược sử tương lai', 430, 15, 'Sách khoa học dự đoán tương lai', 3, 8, 3, 4, 2025, 160000, 190000, 133000, '53.png', '2025-11-25 00:18:46', 57, 'Đang bán', 0, 0, 0.0, 30),
+(54, 'Truyện Kiều', 500, 16, 'Tác phẩm kinh điển của Nguyễn Du', 4, 2, 4, 5, 2025, 100000, 130000, 0, '54.png', '2025-05-10 01:44:05', 74, 'Đang bán', 0, 0, 0.0, 0),
+(55, 'Sống xanh', 270, 14, 'Cuốn sách về bảo vệ môi trường', 5, 5, 5, 6, 2025, 110000, 130000, 0, '55.png', '2025-05-10 01:44:05', 70, 'Đang bán', 0, 0, 0.0, 0),
+(56, 'Kẻ trộm sách', 600, 17, 'Tiểu thuyết về chiến tranh và sách', 6, 1, 1, 7, 2025, 150000, 180000, 0, '56.png', '2025-11-23 15:16:42', 25, 'Đang bán', 21, 0, 0.0, 0),
+(57, 'Sự im lặng của bầy cừu', 380, 14, 'Tiểu thuyết trinh thám nổi tiếng', 7, 10, 2, 8, 2025, 140000, 170000, 0, '57.png', '2025-05-10 01:44:05', 43, 'Đang bán', 0, 0, 0.0, 0),
+(58, 'Nghệ thuật tư duy rành mạch', 350, 14, 'Bạn có chắc mình luôn suy nghĩ logic? Cuốn sách vạch trần 99 lỗi tư duy (cognitive biases) mà chúng ta thường mắc phải hàng ngày như: hiệu ứng hào quang, thiên kiến xác nhận... Một cuốn cẩm nang giúp bạn đưa ra những quyết định sáng suốt hơn trong cuộc sống và công việc.', 8, 5, 3, 9, 2025, 130000, 160000, 0, '58.png', '2025-11-25 00:44:53', 47, 'Đang bán', 0, 0, 0.0, 0),
+(59, 'Làm giàu không khó', 300, 14, 'Cuốn sách dạy kinh doanh', 9, 5, 4, 10, 2025, 90000, 110000, 0, '59.png', '2025-11-24 23:44:19', 78, 'Đang bán', 0, 0, 0.0, 0),
+(60, 'Mắt biếc', 260, 13, 'Câu chuyện tình yêu đơn phương buồn nhất và đẹp nhất của Nguyễn Nhật Ánh. Ngạn và Hà Lan, làng Đo Đo và thành phố thị phi. \"Mắt biếc\" là nỗi tiếc nuối khôn nguôi của tuổi trẻ, là tình yêu thuần khiết nhưng đầy bi kịch, để lại trong lòng độc giả một nốt trầm xao xuyến mãi không tan.', 10, 1, 5, 1, 2025, 80000, 100000, 70000, '60.png', '2025-11-25 00:41:34', 67, 'Đang bán', 0, 0, 0.0, 30),
+(80, 'Giáng Sinh Yêu Thương', 336, 13, 'Câu chuyện kể về cuộc phiêu lưu trong đêm giáng sinh của ông già Ebezener Scrooger ham mê đồng tiền khiến ông ta chẳng bao giờ được tận hưởng một mùa lễ Giáng sinh, ông ta luôn cho rằng giáng sinh chỉ là cái ngày thừa thãi để những người khác có lý do đòi hỏi và bòn rút tiền của lão mà thôi.', 24, 1, 1, 3, 2015, 70000, 800000, 0, 'book_6924a0e7b86d8.png', '2025-11-25 01:19:03', 30, 'Đang bán', 0, 0, 0.0, 0);
+
+--
+-- Triggers `sach`
+--
+DELIMITER $$
+CREATE TRIGGER `trg_CapNhatGiaSale_TuDong` BEFORE UPDATE ON `sach` FOR EACH ROW BEGIN
+    DECLARE giaMoi DECIMAL(15,2);
+
+    -- Trường hợp 1: Có giảm giá
+    IF NEW.phanTramGiamGia > 0 THEN
+        -- Tính giá sau giảm
+        SET giaMoi = NEW.giaBan * (100 - NEW.phanTramGiamGia) / 100;
+        
+        -- LÀM TRÒN SỐ (Chọn 1 trong 2 dòng dưới đây tùy ý thích của bạn)
+        
+        -- Cách 1: Làm tròn đến hàng trăm (VD: 63.750 giữ nguyên, 63.755 -> 63.800) -> KHUYÊN DÙNG
+        SET NEW.giaSale = ROUND(giaMoi, -2);
+
+        -- Cách 2: Làm tròn đến hàng nghìn (VD: 63.750 -> 64.000)
+        -- SET NEW.giaSale = ROUND(giaMoi, -3);
+
+    -- Trường hợp 2: Không giảm giá
+    ELSE
+        SET NEW.giaSale = 0;
+    END IF;
+
+    -- Bổ sung: Logic cập nhật khi sửa giá gốc (như cũ)
+    IF NEW.giaBan <> OLD.giaBan AND NEW.phanTramGiamGia > 0 THEN
+         SET giaMoi = NEW.giaBan * (100 - NEW.phanTramGiamGia) / 100;
+         SET NEW.giaSale = ROUND(giaMoi, -2); -- Nhớ sửa số -2 hoặc -3 cho khớp ở trên
+    END IF;
+END
+$$
+DELIMITER ;
 
 -- --------------------------------------------------------
 
@@ -1187,7 +1287,8 @@ INSERT INTO `tacgia` (`maTacGia`, `tenTacGia`, `ngayCapNhat`, `trangThai`) VALUE
 (9, 'Nguyễn Huy Thiệp', '2025-03-28 05:07:14', 'Hoạt động'),
 (10, 'Nguyễn Ngọc Tư', '2025-03-27 02:50:47', 'Hoạt động'),
 (22, 'Trần Thanh Quy ngu', '2025-05-15 04:24:55', 'Hoạt động'),
-(23, 'Tác giả Spoce', '2025-05-09 17:53:33', 'Tạm dừng');
+(23, 'Tác giả Spoce', '2025-05-09 17:53:33', 'Tạm dừng'),
+(24, ' Charles Dickens', '2025-11-25 01:09:33', 'Hoạt động');
 
 -- --------------------------------------------------------
 
@@ -1473,7 +1574,7 @@ ALTER TABLE `phieugiamgia`
 -- AUTO_INCREMENT for table `phieunhap`
 --
 ALTER TABLE `phieunhap`
-  MODIFY `maPhieuNhap` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `maPhieuNhap` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
 -- AUTO_INCREMENT for table `phuongthucthanhtoan`
@@ -1497,13 +1598,13 @@ ALTER TABLE `ratings`
 -- AUTO_INCREMENT for table `sach`
 --
 ALTER TABLE `sach`
-  MODIFY `maSach` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=80;
+  MODIFY `maSach` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=81;
 
 --
 -- AUTO_INCREMENT for table `tacgia`
 --
 ALTER TABLE `tacgia`
-  MODIFY `maTacGia` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
+  MODIFY `maTacGia` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
 
 --
 -- AUTO_INCREMENT for table `theloai`

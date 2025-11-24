@@ -76,6 +76,13 @@ class app_models_TheLoai extends app_libs_DBConnection {
         return $this->building_queryParam($query)->select();
     }
 
-
+    public function getCategoryInfo($categoryId) {
+        $category = $this->getCategoryById($categoryId);
+        if ($category) {
+            $sach_model = new app_models_Sach();
+            $category['books'] = $sach_model->getBooksByCategory($categoryId);
+        }
+        return $category;
+    }
 }
 ?>

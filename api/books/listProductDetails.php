@@ -27,6 +27,11 @@ if (!isset($payload)) {
     exit();
 }
 
+$sellPrice = $filter['giaBan'] ?? 0;
+        if (isset($filter['giaSale']) && $filter['giaSale'] > 0) {
+            $sellPrice = $filter['giaSale'];
+        }
+
 $data = $payload['data']['cart'];
 
 if (isset($data)) {
@@ -39,6 +44,7 @@ if (isset($data)) {
         'sach.moTa',
         'sach.namXuatBan',
         'sach.giaBan',
+        'sach.giaSale',
         'sach.hinhAnh',
         'sach.soLuong',
         'sach.ngayCapNhat',

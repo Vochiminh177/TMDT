@@ -175,9 +175,6 @@ class app_models_Sach extends app_libs_DBConnection
     }
 
 
-
-
-
     public function countBooks(
         $min_price = 0,
         $max_price = null,
@@ -258,4 +255,110 @@ class app_models_Sach extends app_libs_DBConnection
             'params' => $params
         ])->select_one()['total'];
     }
+
+    // Lấy danh sách sách bán chạy nhất
+    public function getBestSellingBooks($limit = 8)
+    {
+        $limit = intval($limit);
+
+        $this->building_queryParam([
+            'select' => '*',
+            'where' => "trangThai = 'Đang bán' AND soLuongBan > 0",
+            'other' => "ORDER BY soLuongBan DESC LIMIT $limit"
+        ]);
+
+        return $this->select();
+    }
+
+    // Lấy danh sách sách mới về
+    public function getNewBooks($limit = 8, $orderBy = 'ngayCapNhat')
+    {
+        $limit = intval($limit);
+
+        $orderClause = "ngayCapNhat DESC, maSach DESC";
+        if ($orderBy == 'maSach') {
+            $orderClause = "maSach DESC";
+        }
+
+        $this->building_queryParam([
+            'select' => '*',
+            'where' => "trangThai = 'Đang bán'",
+            'other' => "ORDER BY $orderClause LIMIT $limit"
+        ]);
+
+        return $this->select();
+    }
+
+    // Lấy danh sách sách đang giảm giá
+    public function getDiscountedBooks($limit = 8)
+    {
+        $limit = intval($limit);
+
+        $this->building_queryParam([
+            'select' => '*',
+            'where' => "trangThai = 'Đang bán' AND phanTramGiamGia > 0",
+            'other' => "ORDER BY phanTramGiamGia DESC, ngayCapNhat DESC LIMIT $limit"
+        ]);
+
+        return $this->select();
+    }
+
+    // Lấy danh sách sách được đánh giá cao
+    public function getTopRatedBooks($limit = 8)
+    {
+        $limit = intval($limit);
+
+        $this->building_queryParam([
+            'select' => '*',
+            'where' => "trangThai = 'Đang bán' AND tongDanhGia >= 1",
+            'other' => "ORDER BY trungBinhDanhGia DESC, tongDanhGia DESC LIMIT $limit"
+        ]);
+
+        return $this->select();
+    }
+
+    // Lấy danh sách tác giả tiêu biểu
+    public function getFeaturedAuthors($limit = 8)
+    {
+        $limit = intval($limit);
+
+        $sql = "SELECT 
+                    tg.maTacGia, 
+                    tg.tenTacGia, 
+                    COUNT(s.maSach) as soDauSach,
+                    SUM(s.soLuongBan) as tongDaBan
+                FROM tacgia tg
+                JOIN sach s ON tg.maTacGia = s.maTacGia
+                WHERE tg.trangThai = 'Hoạt động' AND s.trangThai = 'Đang bán'
+                GROUP BY tg.maTacGia, tg.tenTacGia
+                ORDER BY tongDaBan DESC, soDauSach DESC
+                LIMIT $limit";
+
+        return $this->query($sql)->fetchAll();
+    }
+
+    // Lấy sách có doanh thu cao nhất
+    public function getHighestRevenueBooks($limit = 5)
+    {
+        $limit = intval($limit);
+
+        $sql = "SELECT s.maSach, s.tenSach, s.hinhAnh, SUM(ctdh.tienThu) as total_revenue
+                FROM sach s
+                JOIN chitietdonhang ctdh ON s.maSach = ctdh.maSach
+                JOIN donhang dh ON ctdh.maDonHang = dh.maDonHang
+                WHERE dh.trangThai IN ('Đã xác nhận', 'Đã giao hàng')
+                GROUP BY s.maSach
+                ORDER BY total_revenue DESC
+                LIMIT $limit";
+
+        return $this->query($sql)->fetchAll();
+    }
+
+    // public function getBookByAuthor($maTacGia)
+    // {
+    //     return $this->building_queryParam([
+    //         'where' => 'maTacGia = ?',
+    //         'params' => [$maTacGia]
+    //     ])->select();
+    // }
 }

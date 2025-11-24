@@ -10,3 +10,6 @@
 
 * Một vài tài khoản quan trọng trên hệ thống
    -Tài khoản quản trị viên: quantrivien - Mật khẩu: quantrivien
+
+* Hàm set phần trăm giảm giá (n - số cuốn sách, m - phần trăm)
+CALL SetGiamGiaSachBanCham(n,m);

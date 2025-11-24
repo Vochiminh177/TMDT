@@ -84,5 +84,13 @@ class app_models_TacGia extends app_libs_DBConnection {
         ])->select();
     }
 
+    public function getAuthorInfo($authorId) {
+        $author = $this->getAuthorById($authorId);
+        if ($author) {
+            $sach_model = new app_models_Sach();
+            $author['books'] = $sach_model->getBooksByAuthor($authorId);
+        }
+        return $author;
+    }
 }
 ?>
